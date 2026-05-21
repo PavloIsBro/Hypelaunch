@@ -56,8 +56,15 @@ export default function HomePage() {
       <Background />
       {loading ? <LoadingOverlay message="Generating preview…" /> : null}
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
-        <header className="flex flex-col items-center text-center">
+      <div
+        className={[
+          "relative z-10 mx-auto flex w-full max-w-5xl flex-col px-5 pb-24 sm:px-8",
+          fullResult
+            ? "min-h-screen pt-6 sm:pt-8"
+            : "min-h-[calc(100dvh-3.5rem)] justify-center pt-4 sm:min-h-[calc(100dvh-4rem)]",
+        ].join(" ")}
+      >
+        <header className="flex w-full flex-col items-center text-center">
           <HeaderBrand />
 
           <p className="animate-fade-up stagger-1 mt-4 max-w-lg text-pretty text-base text-zinc-400 sm:text-lg">

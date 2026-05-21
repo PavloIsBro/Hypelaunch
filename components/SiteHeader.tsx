@@ -61,15 +61,21 @@ export function SiteHeader() {
             <span className="hidden font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-400 transition group-hover:text-zinc-200 sm:inline">
               hypelaunch.space
             </span>
-            <span
+            <svg
               aria-hidden
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               className={[
-                "ml-0.5 text-[10px] text-zinc-600 transition sm:ml-1",
-                menuOpen ? "rotate-180 text-zinc-400" : "",
+                "ml-1 h-4 w-4 shrink-0 text-sky-400 transition sm:h-5 sm:w-5",
+                menuOpen ? "rotate-180 text-sky-300" : "",
               ].join(" ")}
             >
-              ▾
-            </span>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
           </button>
 
           {menuOpen ? (

@@ -33,7 +33,7 @@ export default function DocsPage() {
       <div className="relative z-10 mx-auto max-w-3xl px-5 pb-24 sm:px-8">
         <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-400/80">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400/90">
               Documentation
             </p>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
@@ -64,7 +64,7 @@ export default function DocsPage() {
             <a
               key={id}
               href={`#${id}`}
-              className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-zinc-400 transition hover:border-white/20 hover:text-white"
+              className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-zinc-400 transition hover:border-sky-500/30 hover:text-sky-300"
             >
               {label}
             </a>
@@ -98,7 +98,7 @@ export default function DocsPage() {
 
           <DocSection id="interest" title="3. Interest Score">
             <p>
-              The <strong className="font-medium text-violet-300">Interest Score</strong> estimates
+              The <strong className="font-medium text-sky-300">Interest Score</strong> estimates
               how much current attention exists around your narrative based on X/Twitter-style
               analysis. Higher scores suggest the meta or angle may already have momentum on the
               timeline — useful for timing and positioning, not as a guarantee of outcomes.
@@ -133,8 +133,8 @@ export default function DocsPage() {
                   tweets, growth playbook, and Launch Readiness context.
                 </p>
               </article>
-              <article className="rounded-xl border border-violet-500/25 bg-violet-500/10 p-4">
-                <h3 className="font-semibold text-violet-300">Extra</h3>
+              <article className="rounded-xl border border-sky-500/25 bg-sky-500/10 p-4">
+                <h3 className="font-semibold text-sky-300">Extra</h3>
                 <p className="mt-2 text-sm text-zinc-500">
                   Everything in Pro plus landing page preview, Telegram Q&A, launch content plan,
                   and a stronger launch-ready package.
@@ -149,9 +149,9 @@ export default function DocsPage() {
               included in Pro or Extra by default.
             </p>
             <ul className="space-y-3">
-              <li className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
-                <span className="font-semibold text-violet-200">X/Twitter Automation</span>
-                <span className="ml-2 font-mono text-xs text-violet-300/80">+0.1 SOL</span>
+              <li className="rounded-xl border border-sky-500/20 bg-sky-500/5 px-4 py-3">
+                <span className="font-semibold text-sky-200">X/Twitter Automation</span>
+                <span className="ml-2 font-mono text-xs text-sky-300/80">+0.1 SOL</span>
                 <p className="mt-1 text-sm text-zinc-500">
                   Schedule and auto-post launch content for your memecoin campaign.
                 </p>
