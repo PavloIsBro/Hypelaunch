@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -86,7 +85,24 @@ export function SiteHeader() {
               <button
                 type="button"
                 role="menuitem"
-                className="flex w-full px-4 py-2.5 text-left text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+                className={[
+                  "flex w-full px-4 py-2.5 text-left text-sm transition hover:bg-white/[0.06] hover:text-white",
+                  pathname === "/" ? "text-sky-300" : "text-zinc-300",
+                ].join(" ")}
+                onClick={() => {
+                  setMenuOpen(false);
+                  router.push("/");
+                }}
+              >
+                App
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className={[
+                  "flex w-full px-4 py-2.5 text-left text-sm transition hover:bg-white/[0.06] hover:text-white",
+                  pathname === "/docs" ? "text-sky-300" : "text-zinc-300",
+                ].join(" ")}
                 onClick={() => {
                   setMenuOpen(false);
                   router.push("/docs");
@@ -99,14 +115,6 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-3">
-          {pathname === "/docs" ? (
-            <Link
-              href="/"
-              className="hidden rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 sm:inline"
-            >
-              App
-            </Link>
-          ) : null}
           <WalletMultiButton className="wallet-btn !h-9 !rounded-xl !border !border-white/15 !bg-white/5 !px-3 !py-0 !text-xs !font-semibold !text-white hover:!bg-white/10 sm:!text-sm" />
         </div>
       </div>
