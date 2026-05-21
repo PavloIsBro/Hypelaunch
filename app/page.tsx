@@ -16,7 +16,6 @@ import { ScoreRing } from "@/components/ScoreRing";
 import { StrategyCard } from "@/components/StrategyCard";
 import { TelegramPreview } from "@/components/TelegramPreview";
 import { TweetList } from "@/components/TweetList";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { generateMockLaunchKit, MOCK_LOADING_MS } from "@/lib/mock";
 import type { LaunchKitFull, PaidPlan } from "@/lib/types";
 
@@ -57,13 +56,7 @@ export default function HomePage() {
       <Background />
       {loading ? <LoadingOverlay message="Generating preview…" /> : null}
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-24 pt-16 sm:px-8 sm:pt-20">
-        <div className="pointer-events-none absolute right-5 top-5 z-20 sm:right-8 sm:top-6">
-          <div className="pointer-events-auto">
-            <WalletMultiButton className="wallet-btn !rounded-xl !border !border-white/15 !bg-white/5 !px-3 !py-2 !text-xs !font-semibold !text-white hover:!bg-white/10 sm:!text-sm" />
-          </div>
-        </div>
-
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
         <header className="flex flex-col items-center text-center">
           <HeaderBrand />
 

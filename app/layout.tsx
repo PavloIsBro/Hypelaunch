@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SolanaProviders } from "@/components/SolanaProviders";
 import "./globals.css";
 
@@ -27,7 +28,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} antialiased`}>
-        <SolanaProviders>{children}</SolanaProviders>
+        <SolanaProviders>
+          <SiteHeader />
+          <main className="relative min-h-screen pt-14 sm:pt-16">{children}</main>
+        </SolanaProviders>
       </body>
     </html>
   );
