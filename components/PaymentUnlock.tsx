@@ -1,15 +1,22 @@
 "use client";
 
+import { AutomationAddonsSection } from "@/components/AutomationAddonsSection";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  addonsTotalSol,
+  AUTOMATION_ADDON_PRICE_SOL,
+  EMPTY_ADDONS,
+  type PurchasedAddons,
+} from "@/lib/addons";
 import { getExtraPriceSol, getProPriceSol } from "@/lib/solana-env";
 import type { PaidPlan } from "@/lib/types";
 
 type PaymentUnlockProps = {
   targetPlan: PaidPlan;
   unlocked: null | PaidPlan;
-  onUnlocked: (plan: PaidPlan) => void;
+  onUnlocked: (plan: PaidPlan, addons: PurchasedAddons) => void;
 };
 
 type MockStage = "preparing" | "connecting" | "confirming" | "confirmed";
@@ -31,16 +38,21 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
 
   const [stage, setStage] = useState<MockStage | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [addonSelection, setAddonSelection] = useState<PurchasedAddons>(EMPTY_ADDONS);
 
   const proSol = getProPriceSol();
   const extraSol = getExtraPriceSol();
   const planLabel = targetPlan === "pro" ? "Pro" : "Extra";
-  const amountSol =
-    unlocked === "pro" && targetPlan === "extra"
-      ? Math.max(0, extraSol - proSol)
-      : targetPlan === "pro"
-        ? proSol
-        : extraSol;
+
+  const planBaseSol = useMemo(() => {
+    if (unlocked === "pro" && targetPlan === "extra") {
+      return Math.max(0, extraSol - proSol);
+    }
+    return targetPlan === "pro" ? proSol : extraSol;
+  }, [extraSol, proSol, targetPlan, unlocked]);
+
+  const addonsSol = addonsTotalSol(addonSelection);
+  const totalSol = planBaseSol + addonsSol;
 
   const alreadyUnlocked =
     (targetPlan === "pro" && (unlocked === "pro" || unlocked === "extra")) ||
@@ -50,6 +62,7 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
     openedModalRef.current = false;
     setStage(null);
     setProcessing(false);
+    setAddonSelection(EMPTY_ADDONS);
   }, [targetPlan]);
 
   useEffect(() => {
@@ -76,8 +89,8 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
 
     setStage("confirmed");
     await new Promise((r) => window.setTimeout(r, 700));
-    onUnlocked(targetPlan);
-  }, [onUnlocked, setVisible, targetPlan, wallet.connected]);
+    onUnlocked(targetPlan, { ...addonSelection });
+  }, [addonSelection, onUnlocked, setVisible, targetPlan, wallet.connected]);
 
   if (alreadyUnlocked) {
     return (
@@ -123,7 +136,7 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
             <div>
               <p className="text-sm font-medium text-white">Connect Phantom wallet</p>
               <p className="mt-1 max-w-sm text-xs text-zinc-500">
-                Step 1 of 2 — connect your wallet to continue to checkout.
+                Connect your wallet, then choose optional automation add-ons.
               </p>
             </div>
             <button
@@ -151,35 +164,57 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">Selected plan</p>
-                  <p className="mt-1 text-xl font-bold text-white">{planLabel}</p>
-                  <p className="mt-2 text-xs text-zinc-500">
-                    Full launch kit unlock · one-time demo payment
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs uppercase tracking-wider text-zinc-500">Total</p>
-                  <p className="mt-1 font-mono text-2xl font-bold text-violet-300">
-                    {amountSol.toFixed(2)} SOL
-                  </p>
-                </div>
-              </div>
+              <p className="text-xs uppercase tracking-wider text-zinc-500">Order summary</p>
+              <p className="mt-1 text-xl font-bold text-white">{planLabel} plan</p>
 
-              <div className="mt-5 flex gap-2 border-t border-white/5 pt-4 text-[11px] text-zinc-500">
-                <span className="rounded-full border border-white/10 px-2 py-0.5">Solana devnet</span>
-                <span className="rounded-full border border-white/10 px-2 py-0.5">Mock tx</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={runMockPayment}
-                className="btn-glow mt-5 w-full rounded-xl bg-white py-3.5 text-sm font-bold text-black transition hover:scale-[1.01] active:scale-[0.99]"
-              >
-                Buy Now
-              </button>
+              <ul className="mt-4 space-y-2 border-t border-white/5 pt-4 text-sm">
+                <li className="flex justify-between text-zinc-400">
+                  <span>{planLabel}</span>
+                  <span className="font-mono text-zinc-300">{planBaseSol.toFixed(2)} SOL</span>
+                </li>
+                {addonSelection.x ? (
+                  <li className="flex justify-between text-zinc-400">
+                    <span>X/Twitter Automation</span>
+                    <span className="font-mono text-violet-300/90">
+                      +{AUTOMATION_ADDON_PRICE_SOL.toFixed(2)} SOL
+                    </span>
+                  </li>
+                ) : null}
+                {addonSelection.telegram ? (
+                  <li className="flex justify-between text-zinc-400">
+                    <span>Telegram Automation</span>
+                    <span className="font-mono text-violet-300/90">
+                      +{AUTOMATION_ADDON_PRICE_SOL.toFixed(2)} SOL
+                    </span>
+                  </li>
+                ) : null}
+                <li className="flex justify-between border-t border-white/5 pt-3 font-semibold text-white">
+                  <span>Total</span>
+                  <span className="font-mono text-xl text-violet-300">
+                    {totalSol.toFixed(2)} SOL
+                  </span>
+                </li>
+              </ul>
             </div>
+
+            <AutomationAddonsSection
+              selected={addonSelection}
+              onChange={setAddonSelection}
+              disabled={processing}
+            />
+
+            <div className="flex gap-2 text-[11px] text-zinc-500">
+              <span className="rounded-full border border-white/10 px-2 py-0.5">Solana devnet</span>
+              <span className="rounded-full border border-white/10 px-2 py-0.5">Mock tx</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={runMockPayment}
+              className="btn-glow w-full rounded-xl bg-white py-3.5 text-sm font-bold text-black transition hover:scale-[1.01] active:scale-[0.99]"
+            >
+              Buy for {totalSol.toFixed(2)} SOL
+            </button>
           </div>
         ) : null}
 
@@ -203,6 +238,11 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
                   ? "Payment confirmed"
                   : MOCK_STAGES.find((s) => s.id === stage)?.label ?? "Processing…"}
               </p>
+              {stage !== "confirmed" ? (
+                <p className="text-center font-mono text-xs text-zinc-500">
+                  Total: {totalSol.toFixed(2)} SOL
+                </p>
+              ) : null}
             </div>
 
             <ul className="space-y-2">
@@ -242,7 +282,8 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
 
             {stage === "confirmed" ? (
               <p className="text-center text-sm font-semibold text-emerald-400">
-                Payment confirmed — unlocking {planLabel}…
+                Payment confirmed — unlocking {planLabel}
+                {addonsSol > 0 ? " + add-ons" : ""}…
               </p>
             ) : null}
           </div>

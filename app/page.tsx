@@ -9,7 +9,9 @@ import { LandingPreview } from "@/components/LandingPreview";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PaymentUnlock } from "@/components/PaymentUnlock";
 import { PricingCards } from "@/components/PricingCards";
+import { PurchasedAddonsBadges } from "@/components/PurchasedAddonsBadges";
 import { ResultTierBadge } from "@/components/ResultTierBadge";
+import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
 import { ScoreRing } from "@/components/ScoreRing";
 import { StrategyCard } from "@/components/StrategyCard";
 import { TelegramPreview } from "@/components/TelegramPreview";
@@ -23,6 +25,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [fullResult, setFullResult] = useState<LaunchKitFull | null>(null);
   const [unlocked, setUnlocked] = useState<null | PaidPlan>(null);
+  const [purchasedAddons, setPurchasedAddons] = useState<PurchasedAddons>(EMPTY_ADDONS);
   const [selectedPaid, setSelectedPaid] = useState<PaidPlan | null>(null);
   const resultsRef = useRef<HTMLElement>(null);
 
@@ -34,6 +37,7 @@ export default function HomePage() {
     setLoading(true);
     setFullResult(null);
     setUnlocked(null);
+    setPurchasedAddons(EMPTY_ADDONS);
     setSelectedPaid(null);
 
     window.setTimeout(() => {
@@ -108,6 +112,7 @@ export default function HomePage() {
                   {unlocked ? "Full launch kit" : "Limited preview"}
                 </p>
                 <ResultTierBadge unlocked={unlocked} />
+                <PurchasedAddonsBadges addons={purchasedAddons} />
               </div>
               <h2 className="text-2xl font-bold text-white sm:text-3xl">
                 {fullResult.tokenName}{" "}
@@ -204,17 +209,29 @@ export default function HomePage() {
                   ticker={fullResult.ticker}
                   className="animate-fade-up"
                 />
-                <AutomationPreview
-                  xPosting={fullResult.automation.xPosting}
-                  telegramBot={fullResult.automation.telegramBot}
-                  className="animate-fade-up"
-                />
               </>
             ) : unlocked === "pro" ? (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-violet-500/20 p-8 text-center text-sm text-zinc-500">
                 <p>
-                  <span className="text-violet-300">Extra</span> adds AI-style landing, Telegram
-                  Q&A, launch content plan, and automation notes — unlock below.
+                  <span className="text-violet-300">Extra</span> adds landing, Telegram Q&A, and
+                  launch content plan — unlock below.
+                </p>
+              </div>
+            ) : null}
+
+            {showProContent && (purchasedAddons.x || purchasedAddons.telegram) ? (
+              <AutomationPreview
+                xPosting={fullResult.automation.xPosting}
+                telegramBot={fullResult.automation.telegramBot}
+                enabled={purchasedAddons}
+                className="animate-fade-up"
+              />
+            ) : showProContent ? (
+              <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-zinc-500">
+                <p>
+                  Add <span className="text-violet-300">X</span> or{" "}
+                  <span className="text-cyan-300">Telegram</span> automation at checkout (+0.1 SOL
+                  each).
                 </p>
               </div>
             ) : null}
@@ -244,8 +261,12 @@ export default function HomePage() {
                 <PaymentUnlock
                   targetPlan={selectedPaid}
                   unlocked={unlocked}
-                  onUnlocked={(plan) => {
+                  onUnlocked={(plan, addons) => {
                     setUnlocked(plan);
+                    setPurchasedAddons((prev) => ({
+                      x: prev.x || addons.x,
+                      telegram: prev.telegram || addons.telegram,
+                    }));
                     setSelectedPaid(null);
                   }}
                 />

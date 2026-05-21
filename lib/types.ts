@@ -28,4 +28,4 @@ export type LaunchKitFull = {
 
 export type PaidPlan = "pro" | "extra";
 
-export type TxStatus = "idle" | "pending" | "confirmed" | "failed";
+export type { PurchasedAddons } from "./addons";

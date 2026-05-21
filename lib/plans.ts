@@ -41,7 +41,7 @@ export const PRICING_PLANS: PricingPlanMeta[] = [
     bullets: [
       "Everything in Pro",
       "AI-style landing page, Telegram Q&A, launch content plan",
-      "X / Telegram automation setup notes",
+      "Optional X / Telegram automation add-ons at checkout",
     ],
   },
 ];
