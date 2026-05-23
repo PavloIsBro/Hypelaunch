@@ -164,5 +164,3 @@ export function generateMockLaunchKit(idea: string): LaunchKitFull {
 }
 
 export const MOCK_LOADING_MS = 2200;
-
-export const FREE_NARRATIVE_PREVIEW_CHARS = 140;

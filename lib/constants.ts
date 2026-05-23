@@ -1,0 +1,1 @@
+export const FREE_NARRATIVE_PREVIEW_CHARS = 140;

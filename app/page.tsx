@@ -16,7 +16,7 @@ import { ScoreRing } from "@/components/ScoreRing";
 import { StrategyCard } from "@/components/StrategyCard";
 import { TelegramPreview } from "@/components/TelegramPreview";
 import { TweetList } from "@/components/TweetList";
-import { generateMockLaunchKit, MOCK_LOADING_MS } from "@/lib/mock";
+import { fetchLaunchKit } from "@/lib/client-generate";
 import type { LaunchKitFull, PaidPlan } from "@/lib/types";
 
 export default function HomePage() {
@@ -26,9 +26,11 @@ export default function HomePage() {
   const [unlocked, setUnlocked] = useState<null | PaidPlan>(null);
   const [purchasedAddons, setPurchasedAddons] = useState<PurchasedAddons>(EMPTY_ADDONS);
   const [selectedPaid, setSelectedPaid] = useState<PaidPlan | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [generateNotice, setGenerateNotice] = useState<string | null>(null);
   const resultsRef = useRef<HTMLElement>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = idea.trim();
     if (!trimmed || loading) return;
@@ -38,14 +40,23 @@ export default function HomePage() {
     setUnlocked(null);
     setPurchasedAddons(EMPTY_ADDONS);
     setSelectedPaid(null);
+    setGenerateError(null);
+    setGenerateNotice(null);
 
-    window.setTimeout(() => {
-      setFullResult(generateMockLaunchKit(trimmed));
-      setLoading(false);
+    try {
+      const data = await fetchLaunchKit(trimmed, "free", EMPTY_ADDONS);
+      setFullResult(data.kit);
+      if (data.message) setGenerateNotice(data.message);
       window.setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
-    }, MOCK_LOADING_MS);
+    } catch (err) {
+      setGenerateError(
+        err instanceof Error ? err.message : "Could not generate your kit. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showProContent = unlocked === "pro" || unlocked === "extra";
@@ -97,12 +108,24 @@ export default function HomePage() {
             </button>
           </form>
 
-          {!fullResult && (
+          {generateError ? (
+            <p className="animate-fade-in mt-6 max-w-md text-sm text-red-400/90" role="alert">
+              {generateError}
+            </p>
+          ) : null}
+
+          {!fullResult && !generateError ? (
             <p className="animate-fade-in stagger-3 mt-8 text-xs text-zinc-600">
               Free preview · then unlock Pro or Extra with Solana (devnet)
             </p>
-          )}
+          ) : null}
         </header>
+
+        {generateNotice && fullResult ? (
+          <p className="mx-auto mb-4 max-w-lg text-center text-sm text-amber-300/90" role="status">
+            {generateNotice}
+          </p>
+        ) : null}
 
         {fullResult ? (
           <section ref={resultsRef} className="mt-16 space-y-6 sm:mt-20" aria-live="polite">

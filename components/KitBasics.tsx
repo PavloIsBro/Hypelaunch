@@ -1,5 +1,5 @@
 import type { LaunchKitFull } from "@/lib/types";
-import { FREE_NARRATIVE_PREVIEW_CHARS } from "@/lib/mock";
+import { FREE_NARRATIVE_PREVIEW_CHARS } from "@/lib/constants";
 
 type KitBasicsProps = {
   result: LaunchKitFull;
