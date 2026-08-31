@@ -17,9 +17,9 @@ export const PRICING_PLANS: PricingPlanMeta[] = [
     label: "Free",
     priceLabel: "0 SOL",
     bullets: [
-      "Limited preview: name, ticker, teaser narrative",
-      "Interest Score + Launch Readiness Score",
-      "Upgrade anytime to unlock the full kit",
+      "Basic idea check + narrative summary",
+      "Limited Interest Score preview",
+      "Upgrade for full Pump.fun market intelligence",
     ],
   },
   {
@@ -28,9 +28,10 @@ export const PRICING_PLANS: PricingPlanMeta[] = [
     priceLabel: `${getProPriceSol()} SOL`,
     badge: { text: "Popular", variant: "popular" },
     bullets: [
-      "Full narrative, market & competitor memecoin analysis",
-      "X content strategy + growth playbook",
-      "Launch Readiness + Interest scores (full report)",
+      "Pump.fun narrative + competitor memecoin analysis",
+      "Market saturation, timing signal, risk notes",
+      "Interest Score + Launch Readiness (full report)",
+      "Recommended positioning",
     ],
   },
   {
@@ -40,8 +41,9 @@ export const PRICING_PLANS: PricingPlanMeta[] = [
     badge: { text: "Advanced", variant: "advanced" },
     bullets: [
       "Everything in Pro",
-      "AI-style landing page, Telegram Q&A, launch content plan",
-      "Optional X / Telegram automation add-ons at checkout",
+      "AI-generated landing page preview",
+      "Launch execution layer",
+      "Optional X / Telegram automation at checkout",
     ],
   },
 ];

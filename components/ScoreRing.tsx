@@ -7,6 +7,7 @@ type ScoreRingProps = {
   score: number;
   accent?: "violet" | "cyan";
   animate?: boolean;
+  locked?: boolean;
   className?: string;
 };
 
@@ -15,6 +16,7 @@ export function ScoreRing({
   score,
   accent = "violet",
   animate = false,
+  locked = false,
   className = "",
 }: ScoreRingProps) {
   const radius = 44;
@@ -28,6 +30,8 @@ export function ScoreRing({
       : "url(#score-violet)";
 
   useEffect(() => {
+    if (locked) return;
+
     if (!animate) {
       setDisplayScore(score);
       setOffset(circumference - (score / 100) * circumference);
@@ -51,7 +55,7 @@ export function ScoreRing({
 
     const frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [score, animate, circumference]);
+  }, [score, animate, circumference, locked]);
 
   return (
     <article
@@ -99,6 +103,13 @@ export function ScoreRing({
         </span>
       </div>
       <p className="mt-3 text-center text-xs text-zinc-500">out of 100</p>
+      {locked ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-[2px]">
+          <span className="rounded-full border border-white/15 bg-black/80 px-3 py-1 text-xs text-zinc-300">
+            Locked — Pro
+          </span>
+        </div>
+      ) : null}
     </article>
   );
 }

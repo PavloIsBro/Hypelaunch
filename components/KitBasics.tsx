@@ -9,14 +9,14 @@ type KitBasicsProps = {
 
 export function KitBasics({ result, variant, className = "" }: KitBasicsProps) {
   const narrativePreview =
-    result.narrative.length > FREE_NARRATIVE_PREVIEW_CHARS
-      ? `${result.narrative.slice(0, FREE_NARRATIVE_PREVIEW_CHARS)}…`
-      : result.narrative;
+    result.narrativeSummary.length > FREE_NARRATIVE_PREVIEW_CHARS
+      ? `${result.narrativeSummary.slice(0, FREE_NARRATIVE_PREVIEW_CHARS)}…`
+      : result.narrativeSummary;
 
   return (
     <section className={`glass-card rounded-2xl p-6 ${className}`}>
-      <h2 className="text-sm font-semibold text-white">Core kit</h2>
-      <p className="mt-0.5 text-xs text-zinc-500">Name, ticker, narrative & positioning</p>
+      <h2 className="text-sm font-semibold text-white">Idea snapshot</h2>
+      <p className="mt-0.5 text-xs text-zinc-500">Token identity & narrative summary</p>
       <dl className="mt-5 space-y-4">
         <div className="rounded-xl border border-white/[0.06] bg-black/40 px-4 py-3">
           <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -34,31 +34,16 @@ export function KitBasics({ result, variant, className = "" }: KitBasicsProps) {
         </div>
         <div className="rounded-xl border border-white/[0.06] bg-black/40 px-4 py-3">
           <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-            Narrative
+            Narrative summary
           </dt>
           <dd className="mt-1 text-sm leading-relaxed text-zinc-300">
-            {variant === "preview" ? narrativePreview : result.narrative}
+            {variant === "preview" ? narrativePreview : result.narrativeSummary}
           </dd>
           {variant === "preview" ? (
-            <p className="mt-2 text-xs text-violet-400/80">Upgrade to Pro for the full narrative.</p>
+            <p className="mt-2 text-xs text-violet-400/80">
+              Upgrade to Pro for full Pump.fun market intelligence.
+            </p>
           ) : null}
-        </div>
-        <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-black/40 px-4 py-3">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-            Positioning
-          </dt>
-          {variant === "preview" ? (
-            <>
-              <dd className="mt-1 select-none blur-sm">{result.positioning}</dd>
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/55">
-                <span className="rounded-full border border-white/15 bg-black/80 px-3 py-1 text-xs text-zinc-300">
-                  Locked — Pro
-                </span>
-              </div>
-            </>
-          ) : (
-            <dd className="mt-1 text-sm leading-relaxed text-zinc-300">{result.positioning}</dd>
-          )}
         </div>
       </dl>
     </section>

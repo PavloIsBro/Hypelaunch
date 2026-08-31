@@ -1,23 +1,63 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import type { PlanId } from "@/lib/plans";
 import { AutomationPreview } from "@/components/AutomationPreview";
 import { Background } from "@/components/Background";
 import { HeaderBrand } from "@/components/HeaderBrand";
+import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
 import { KitBasics } from "@/components/KitBasics";
 import { LandingPreview } from "@/components/LandingPreview";
+import { LaunchExecutionPreview } from "@/components/LaunchExecutionPreview";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PaymentUnlock } from "@/components/PaymentUnlock";
 import { PricingCards } from "@/components/PricingCards";
 import { PurchasedAddonsBadges } from "@/components/PurchasedAddonsBadges";
 import { ResultTierBadge } from "@/components/ResultTierBadge";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
+import { ScoreInsights } from "@/components/ScoreInsights";
 import { ScoreRing } from "@/components/ScoreRing";
 import { StrategyCard } from "@/components/StrategyCard";
-import { TelegramPreview } from "@/components/TelegramPreview";
-import { TweetList } from "@/components/TweetList";
 import { fetchLaunchKit } from "@/lib/client-generate";
 import type { LaunchKitFull, PaidPlan } from "@/lib/types";
+
+const PRO_INTELLIGENCE_SECTIONS = [
+  {
+    title: "Pump.fun narrative analysis",
+    subtitle: "Meta fit & attention velocity",
+    key: "pumpFunNarrativeAnalysis" as const,
+  },
+  {
+    title: "Competitor memecoin analysis",
+    subtitle: "Recent micro-cap lookalikes",
+    key: "competitorMemecoinAnalysis" as const,
+  },
+  {
+    title: "Market saturation",
+    subtitle: "Narrative bucket crowding",
+    key: "marketSaturation" as const,
+  },
+  {
+    title: "Similar recent narratives",
+    subtitle: "Parallel CT attention plays",
+    key: "similarRecentNarratives" as const,
+  },
+  {
+    title: "Launch timing signal",
+    subtitle: "Enter / wait / avoid",
+    key: "launchTimingSignal" as const,
+  },
+  {
+    title: "Risk notes",
+    subtitle: "Launch-specific risks",
+    key: "riskNotes" as const,
+  },
+  {
+    title: "Recommended positioning",
+    subtitle: "How to differentiate",
+    key: "recommendedPositioning" as const,
+  },
+];
 
 export default function HomePage() {
   const [idea, setIdea] = useState("");
@@ -29,11 +69,28 @@ export default function HomePage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [generateNotice, setGenerateNotice] = useState<string | null>(null);
   const resultsRef = useRef<HTMLElement>(null);
+  const generateBusyRef = useRef(false);
+  const generateRequestIdRef = useRef(0);
+  const generateAbortRef = useRef<AbortController | null>(null);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    return () => {
+      generateAbortRef.current?.abort();
+    };
+  }, []);
+
+  const handleGenerate = useCallback(async () => {
     const trimmed = idea.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || generateBusyRef.current) return;
+
+    generateBusyRef.current = true;
+    generateAbortRef.current?.abort();
+    const controller = new AbortController();
+    generateAbortRef.current = controller;
+    const requestId = ++generateRequestIdRef.current;
+
+    const selectedPlan: PlanId = selectedPaid ?? unlocked ?? "free";
+    const automationAddons: PurchasedAddons = { ...purchasedAddons };
 
     setLoading(true);
     setFullResult(null);
@@ -44,19 +101,41 @@ export default function HomePage() {
     setGenerateNotice(null);
 
     try {
-      const data = await fetchLaunchKit(trimmed, "free", EMPTY_ADDONS);
+      const data = await fetchLaunchKit(
+        {
+          idea: trimmed,
+          selectedPlan,
+          automationAddons,
+        },
+        controller.signal,
+      );
+
+      if (requestId !== generateRequestIdRef.current) return;
+
       setFullResult(data.kit);
-      if (data.message) setGenerateNotice(data.message);
+      setGenerateNotice(data.message ?? null);
       window.setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
     } catch (err) {
+      if (requestId !== generateRequestIdRef.current) return;
+      if (err instanceof DOMException && err.name === "AbortError") return;
+
+      console.error("Generate failed", err);
       setGenerateError(
-        err instanceof Error ? err.message : "Could not generate your kit. Please try again.",
+        err instanceof Error ? err.message : "Could not generate your report. Please try again.",
       );
     } finally {
-      setLoading(false);
+      if (requestId === generateRequestIdRef.current) {
+        generateBusyRef.current = false;
+        setLoading(false);
+      }
     }
+  }, [idea, purchasedAddons, selectedPaid, unlocked]);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void handleGenerate();
   };
 
   const showProContent = unlocked === "pro" || unlocked === "extra";
@@ -64,8 +143,8 @@ export default function HomePage() {
 
   return (
     <>
-      <Background />
-      {loading ? <LoadingOverlay message="Generating preview…" /> : null}
+      <Background paused={loading} />
+      {loading ? <LoadingOverlay message="Analyzing market signals…" /> : null}
 
       <div
         className={[
@@ -79,7 +158,7 @@ export default function HomePage() {
           <HeaderBrand />
 
           <p className="animate-fade-up stagger-1 mt-4 max-w-lg text-pretty text-base text-zinc-400 sm:text-lg">
-            Turn one idea into a memecoin launch kit
+            Memecoin market intelligence and launch readiness system
           </p>
 
           <form onSubmit={handleSubmit} className="animate-fade-up stagger-2 mt-10 w-full max-w-2xl">
@@ -93,7 +172,7 @@ export default function HomePage() {
                 type="text"
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
-                placeholder="Describe your memecoin idea..."
+                placeholder="Describe your Pump.fun memecoin idea..."
                 autoComplete="off"
                 disabled={loading}
                 className="w-full rounded-xl border-0 bg-transparent px-5 py-5 text-base text-white outline-none placeholder:text-zinc-600 disabled:opacity-50 sm:text-lg"
@@ -104,7 +183,7 @@ export default function HomePage() {
               disabled={loading || !idea.trim()}
               className="btn-glow mt-4 w-full rounded-2xl bg-white py-4 text-sm font-bold tracking-wide text-black transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none"
             >
-              {loading ? "Generating…" : "Generate free preview"}
+              {loading ? "Analyzing…" : "Run free intelligence preview"}
             </button>
           </form>
 
@@ -116,7 +195,7 @@ export default function HomePage() {
 
           {!fullResult && !generateError ? (
             <p className="animate-fade-in stagger-3 mt-8 text-xs text-zinc-600">
-              Free preview · then unlock Pro or Extra with Solana (devnet)
+              Free preview · unlock Pro or Extra for full Pump.fun intelligence
             </p>
           ) : null}
         </header>
@@ -129,10 +208,12 @@ export default function HomePage() {
 
         {fullResult ? (
           <section ref={resultsRef} className="mt-16 space-y-6 sm:mt-20" aria-live="polite">
+            <IntelligenceDisclaimer className="animate-fade-in" />
+
             <div className="animate-fade-up flex flex-col gap-3 border-b border-white/5 pb-6">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-violet-400/80">
-                  {unlocked ? "Full launch kit" : "Limited preview"}
+                  {unlocked ? "Full intelligence report" : "Limited preview"}
                 </p>
                 <ResultTierBadge unlocked={unlocked} />
                 <PurchasedAddonsBadges addons={purchasedAddons} />
@@ -158,10 +239,18 @@ export default function HomePage() {
                 label="Launch Readiness Score"
                 score={fullResult.launchReadinessScore}
                 accent="cyan"
-                animate
+                animate={showProContent}
+                locked={!showProContent}
                 className="animate-fade-up stagger-2"
               />
             </div>
+
+            <ScoreInsights
+              interestReasoning={fullResult.interestReasoning}
+              launchReadinessReasoning={fullResult.launchReadinessReasoning}
+              variant={showProContent ? "full" : "preview"}
+              className="animate-fade-up"
+            />
 
             <KitBasics
               result={fullResult}
@@ -170,46 +259,23 @@ export default function HomePage() {
             />
 
             {showProContent ? (
-              <>
-                <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
+                {PRO_INTELLIGENCE_SECTIONS.map((section) => (
                   <StrategyCard
-                    title="Market analysis"
-                    subtitle="Narrative & attention context"
-                    body={fullResult.marketAnalysis}
-                    className="animate-fade-up stagger-3"
+                    key={section.key}
+                    title={section.title}
+                    subtitle={section.subtitle}
+                    body={fullResult[section.key]}
+                    className="animate-fade-up"
                   />
-                  <StrategyCard
-                    title="Competitor memecoin analysis"
-                    subtitle="How rivals position vs you"
-                    body={fullResult.competitorAnalysis}
-                    className="animate-fade-up stagger-3"
-                  />
-                </div>
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <StrategyCard
-                    title="X content strategy"
-                    subtitle="Posting cadence & hooks"
-                    body={fullResult.xStrategy}
-                    className="animate-fade-up stagger-4"
-                  />
-                  <StrategyCard
-                    title="Growth strategy"
-                    subtitle="Distribution & community"
-                    body={fullResult.growthStrategy}
-                    className="animate-fade-up stagger-4"
-                  />
-                </div>
-                <TweetList
-                  tweets={fullResult.tweets}
-                  ticker={fullResult.ticker}
-                  className="animate-fade-up stagger-4"
-                />
-              </>
+                ))}
+              </div>
             ) : (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
                 <p className="text-zinc-400">
-                  Market analysis, competitor scan, X strategy, tweets, and full narrative unlock
-                  with <span className="text-violet-300">Pro</span> after payment.
+                  Pump.fun narrative analysis, competitor scan, market saturation, timing signal,
+                  risk notes, and positioning unlock with{" "}
+                  <span className="text-violet-300">Pro</span>.
                 </p>
               </div>
             )}
@@ -217,44 +283,36 @@ export default function HomePage() {
             {showExtraContent ? (
               <>
                 <LandingPreview
-                  landing={fullResult.landing}
-                  tokenName={fullResult.tokenName}
+                  landing={fullResult.landingPage}
                   className="animate-fade-up stagger-5"
                 />
-                <StrategyCard
-                  title="Launch content plan"
-                  subtitle="Timeline beats around launch"
-                  body={fullResult.launchContentPlan}
-                  className="animate-fade-up"
-                />
-                <TelegramPreview
-                  items={fullResult.telegramQa}
-                  ticker={fullResult.ticker}
+                <LaunchExecutionPreview
+                  body={fullResult.launchExecutionLayer}
                   className="animate-fade-up"
                 />
               </>
             ) : unlocked === "pro" ? (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-violet-500/20 p-8 text-center text-sm text-zinc-500">
                 <p>
-                  <span className="text-violet-300">Extra</span> adds landing, Telegram Q&A, and
-                  launch content plan — unlock below.
+                  <span className="text-violet-300">Extra</span> adds AI landing page preview and
+                  launch execution layer — unlock below.
                 </p>
               </div>
             ) : null}
 
-            {showProContent && (purchasedAddons.x || purchasedAddons.telegram) ? (
+            {showExtraContent && (purchasedAddons.x || purchasedAddons.telegram) ? (
               <AutomationPreview
                 xPosting={fullResult.automation.xPosting}
                 telegramBot={fullResult.automation.telegramBot}
                 enabled={purchasedAddons}
                 className="animate-fade-up"
               />
-            ) : showProContent ? (
+            ) : showExtraContent ? (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-zinc-500">
                 <p>
-                  Add <span className="text-violet-300">X</span> or{" "}
-                  <span className="text-cyan-300">Telegram</span> automation at checkout (+0.1 SOL
-                  each).
+                  Add optional <span className="text-violet-300">X</span> or{" "}
+                  <span className="text-cyan-300">Telegram</span> launch automation at checkout
+                  (+0.1 SOL each).
                 </p>
               </div>
             ) : null}

@@ -1,25 +1,26 @@
-/** Full mock kit (generated once per idea); UI reveals by unlock tier. */
+import type { LandingPageContent } from "./landing-page";
+
+export type { LandingColorPalette, LandingPageContent } from "./landing-page";
+
+/** Full intelligence report (generated once per idea); UI reveals by unlock tier. */
 export type LaunchKitFull = {
   idea: string;
   tokenName: string;
   ticker: string;
-  narrative: string;
-  positioning: string;
+  narrativeSummary: string;
   interestScore: number;
+  interestReasoning: string;
   launchReadinessScore: number;
-  marketAnalysis: string;
-  competitorAnalysis: string;
-  xStrategy: string;
-  growthStrategy: string;
-  tweets: string[];
-  landing: {
-    headline: string;
-    subheadline: string;
-    cta: string;
-    tagline: string;
-  };
-  telegramQa: { question: string; answer: string }[];
-  launchContentPlan: string;
+  launchReadinessReasoning: string;
+  pumpFunNarrativeAnalysis: string;
+  competitorMemecoinAnalysis: string;
+  marketSaturation: string;
+  similarRecentNarratives: string;
+  launchTimingSignal: string;
+  riskNotes: string;
+  recommendedPositioning: string;
+  landingPage: LandingPageContent;
+  launchExecutionLayer: string;
   automation: {
     xPosting: string;
     telegramBot: string;

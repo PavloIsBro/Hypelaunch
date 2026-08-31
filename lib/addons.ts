@@ -14,13 +14,13 @@ export const AUTOMATION_ADDONS: AutomationAddonMeta[] = [
     id: "x",
     label: "X/Twitter Automation",
     priceSol: AUTOMATION_ADDON_PRICE_SOL,
-    description: "Schedule and auto-post launch content for your memecoin campaign.",
+    description: "Launch-window X monitoring, timing alerts, and signal-based posting cadence.",
   },
   {
     id: "telegram",
     label: "Telegram Automation",
     priceSol: AUTOMATION_ADDON_PRICE_SOL,
-    description: "Generate and automate community Q&A and launch updates.",
+    description: "Community ops automation during launch — pins, alerts, and coordination flows.",
   },
 ];
 
