@@ -24,36 +24,50 @@ const PRO_INTELLIGENCE_SECTIONS = [
     title: "Pump.fun narrative analysis",
     subtitle: "Meta fit & attention velocity",
     key: "pumpFunNarrativeAnalysis" as const,
+    accent: "violet" as const,
+    icon: "pulse" as const,
   },
   {
     title: "Competitor memecoin analysis",
     subtitle: "Recent micro-cap lookalikes",
     key: "competitorMemecoinAnalysis" as const,
+    accent: "cyan" as const,
+    icon: "compete" as const,
   },
   {
     title: "Market saturation",
     subtitle: "Narrative bucket crowding",
     key: "marketSaturation" as const,
+    accent: "amber" as const,
+    icon: "gauge" as const,
   },
   {
     title: "Similar recent narratives",
     subtitle: "Parallel CT attention plays",
     key: "similarRecentNarratives" as const,
+    accent: "sky" as const,
+    icon: "signal" as const,
   },
   {
     title: "Launch timing signal",
     subtitle: "Enter / wait / avoid",
     key: "launchTimingSignal" as const,
+    accent: "emerald" as const,
+    icon: "timing" as const,
   },
   {
     title: "Risk notes",
     subtitle: "Launch-specific risks",
     key: "riskNotes" as const,
+    accent: "rose" as const,
+    icon: "risk" as const,
   },
   {
     title: "Recommended positioning",
     subtitle: "How to differentiate",
     key: "recommendedPositioning" as const,
+    accent: "violet" as const,
+    icon: "target" as const,
   },
 ];
 
@@ -286,6 +300,8 @@ export default function HomePage() {
                     title={section.title}
                     subtitle={section.subtitle}
                     body={fullResult[section.key]}
+                    accent={section.accent}
+                    icon={section.icon}
                     className="animate-fade-up"
                   />
                 ))}
