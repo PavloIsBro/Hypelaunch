@@ -79,63 +79,74 @@ export default function HomePage() {
     };
   }, []);
 
-  const handleGenerate = useCallback(async () => {
-    const trimmed = idea.trim();
-    if (!trimmed || generateBusyRef.current) return;
+  const handleGenerate = useCallback(
+    async (mode: "check" | "launch") => {
+      const trimmed = idea.trim();
+      if (!trimmed || generateBusyRef.current) return;
 
-    generateBusyRef.current = true;
-    generateAbortRef.current?.abort();
-    const controller = new AbortController();
-    generateAbortRef.current = controller;
-    const requestId = ++generateRequestIdRef.current;
+      generateBusyRef.current = true;
+      generateAbortRef.current?.abort();
+      const controller = new AbortController();
+      generateAbortRef.current = controller;
+      const requestId = ++generateRequestIdRef.current;
 
-    const selectedPlan: PlanId = selectedPaid ?? unlocked ?? "free";
-    const automationAddons: PurchasedAddons = { ...purchasedAddons };
+      const selectedPlan: PlanId = mode === "launch" ? "pro" : "free";
+      const automationAddons: PurchasedAddons = { ...purchasedAddons };
 
-    setLoading(true);
-    setFullResult(null);
-    setUnlocked(null);
-    setPurchasedAddons(EMPTY_ADDONS);
-    setSelectedPaid(null);
-    setGenerateError(null);
-    setGenerateNotice(null);
+      setLoading(true);
+      setFullResult(null);
+      setUnlocked(null);
+      setPurchasedAddons(EMPTY_ADDONS);
+      setSelectedPaid(mode === "launch" ? "pro" : null);
+      setGenerateError(null);
+      setGenerateNotice(null);
 
-    try {
-      const data = await fetchLaunchKit(
-        {
-          idea: trimmed,
-          selectedPlan,
-          automationAddons,
-        },
-        controller.signal,
-      );
+      try {
+        const data = await fetchLaunchKit(
+          {
+            idea: trimmed,
+            selectedPlan,
+            automationAddons,
+          },
+          controller.signal,
+        );
 
-      if (requestId !== generateRequestIdRef.current) return;
+        if (requestId !== generateRequestIdRef.current) return;
 
-      setFullResult(data.kit);
-      setGenerateNotice(data.message ?? null);
-      window.setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 80);
-    } catch (err) {
-      if (requestId !== generateRequestIdRef.current) return;
-      if (err instanceof DOMException && err.name === "AbortError") return;
+        setFullResult(data.kit);
+        setGenerateNotice(data.message ?? null);
+        window.setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+        if (mode === "launch") {
+          window.setTimeout(() => {
+            document.getElementById("payment-unlock")?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }, 320);
+        }
+      } catch (err) {
+        if (requestId !== generateRequestIdRef.current) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
 
-      console.error("Generate failed", err);
-      setGenerateError(
-        err instanceof Error ? err.message : "Could not generate your report. Please try again.",
-      );
-    } finally {
-      if (requestId === generateRequestIdRef.current) {
-        generateBusyRef.current = false;
-        setLoading(false);
+        console.error("Generate failed", err);
+        setGenerateError(
+          err instanceof Error ? err.message : "Could not generate your report. Please try again.",
+        );
+      } finally {
+        if (requestId === generateRequestIdRef.current) {
+          generateBusyRef.current = false;
+          setLoading(false);
+        }
       }
-    }
-  }, [idea, purchasedAddons, selectedPaid, unlocked]);
+    },
+    [idea, purchasedAddons],
+  );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void handleGenerate();
+    void handleGenerate("check");
   };
 
   const showProContent = unlocked === "pro" || unlocked === "extra";
@@ -144,7 +155,7 @@ export default function HomePage() {
   return (
     <>
       <Background paused={loading} />
-      {loading ? <LoadingOverlay message="Analyzing market signals…" /> : null}
+      {loading ? <LoadingOverlay message="Building your launch kit…" /> : null}
 
       <div
         className={[
@@ -157,8 +168,12 @@ export default function HomePage() {
         <header className="flex w-full flex-col items-center text-center">
           <HeaderBrand />
 
-          <p className="animate-fade-up stagger-1 mt-4 max-w-lg text-pretty text-base text-zinc-400 sm:text-lg">
-            Memecoin market intelligence and launch readiness system
+          <h2 className="animate-fade-up stagger-1 mt-5 max-w-2xl text-pretty text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+            Make memecoin with one prompt
+          </h2>
+
+          <p className="animate-fade-up stagger-1 mt-3 max-w-lg text-pretty text-base text-zinc-400 sm:text-lg">
+            From idea to launch kit — name, ticker, narrative, and Interest Score in minutes
           </p>
 
           <form onSubmit={handleSubmit} className="animate-fade-up stagger-2 mt-10 w-full max-w-2xl">
@@ -172,19 +187,30 @@ export default function HomePage() {
                 type="text"
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
-                placeholder="Describe your Pump.fun memecoin idea..."
+                placeholder="Describe your meme, character, or narrative..."
                 autoComplete="off"
                 disabled={loading}
                 className="w-full rounded-xl border-0 bg-transparent px-5 py-5 text-base text-white outline-none placeholder:text-zinc-600 disabled:opacity-50 sm:text-lg"
               />
             </div>
-            <button
-              type="submit"
-              disabled={loading || !idea.trim()}
-              className="btn-glow mt-4 w-full rounded-2xl bg-white py-4 text-sm font-bold tracking-wide text-black transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none"
-            >
-              {loading ? "Analyzing…" : "Run free intelligence preview"}
-            </button>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="submit"
+                disabled={loading || !idea.trim()}
+                className="rounded-2xl border border-white/15 bg-white/5 py-4 text-sm font-bold tracking-wide text-white transition hover:bg-white/10 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                {loading ? "Checking…" : "Check"}
+              </button>
+              <button
+                type="button"
+                disabled={loading || !idea.trim()}
+                onClick={() => void handleGenerate("launch")}
+                className="btn-glow rounded-2xl bg-white py-4 text-sm font-bold tracking-wide text-black transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none"
+              >
+                {loading ? "Preparing…" : "Launch"}
+              </button>
+            </div>
           </form>
 
           {generateError ? (
@@ -194,8 +220,10 @@ export default function HomePage() {
           ) : null}
 
           {!fullResult && !generateError ? (
-            <p className="animate-fade-in stagger-3 mt-8 text-xs text-zinc-600">
-              Free preview · unlock Pro or Extra for full Pump.fun intelligence
+            <p className="animate-fade-in stagger-3 mt-8 max-w-md text-xs leading-relaxed text-zinc-600">
+              <span className="text-zinc-400">Check</span> — free name, ticker, short description &amp;
+              Interest Score · <span className="text-zinc-400">Launch</span> — full Pro launch kit
+              (landing, journey map, X &amp; Telegram)
             </p>
           ) : null}
         </header>
