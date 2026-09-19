@@ -16,13 +16,13 @@ export function ScoreInsights({
 
   return (
     <div className={`grid gap-4 sm:grid-cols-2 ${className}`}>
-      <article className="group relative overflow-hidden rounded-2xl border border-violet-400/30 bg-[#0a0a0a]/95 p-5 shadow-[0_0_24px_-8px_rgba(167,139,250,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-violet-300/50 hover:shadow-[0_0_36px_-6px_rgba(167,139,250,0.55)]">
-        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/25 blur-2xl opacity-50 transition group-hover:opacity-80" />
+      <article className="group relative overflow-hidden rounded-2xl border border-emerald-400/30 bg-[#0a0a0a]/95 p-5 shadow-[0_0_24px_-8px_rgba(52,211,153,0.3)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-300/50 hover:shadow-[0_0_36px_-6px_rgba(52,211,153,0.5)]">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-emerald-500/20 blur-2xl opacity-50 transition group-hover:opacity-80" />
         <div className="relative flex items-center justify-between gap-2">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300/80">
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300/80">
             Interest reasoning
           </h3>
-          <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-300">
+          <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
             Live
           </span>
         </div>
@@ -32,7 +32,7 @@ export function ScoreInsights({
           </span>
         </p>
         {variant === "preview" ? (
-          <p className="relative mt-3 text-xs text-violet-400/80">Full breakdown unlocks with Launch.</p>
+          <p className="relative mt-3 text-xs text-cyan-400/80">Full breakdown unlocks with Launch.</p>
         ) : null}
       </article>
 

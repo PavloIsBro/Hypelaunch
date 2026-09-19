@@ -16,18 +16,18 @@ export function KitBasics({ result, variant, className = "" }: KitBasicsProps) {
   return (
     <section
       className={[
-        "group relative overflow-hidden rounded-2xl border border-violet-400/25 bg-[#0a0a0a]/95 p-5 shadow-[0_0_24px_-8px_rgba(167,139,250,0.28)] transition duration-300 hover:-translate-y-0.5 hover:border-violet-300/45 hover:shadow-[0_0_36px_-6px_rgba(167,139,250,0.45)] sm:p-6",
+        "group relative overflow-hidden rounded-2xl border border-cyan-400/25 bg-[#0a0a0a]/95 p-5 shadow-[0_0_24px_-8px_rgba(34,211,238,0.25)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-300/45 hover:shadow-[0_0_36px_-6px_rgba(34,211,238,0.4)] sm:p-6",
         className,
       ].join(" ")}
     >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-violet-500/20 blur-2xl opacity-50 transition group-hover:opacity-80" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-cyan-500/20 blur-2xl opacity-50 transition group-hover:opacity-80" />
 
       <div className="relative flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-white">Idea snapshot</h2>
           <p className="mt-0.5 text-xs text-zinc-500">Token identity & narrative summary</p>
         </div>
-        <span className="rounded-full border border-violet-400/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-300">
+        <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
           Terminal
         </span>
       </div>
@@ -39,11 +39,11 @@ export function KitBasics({ result, variant, className = "" }: KitBasicsProps) {
           </dt>
           <dd className="mt-1 text-lg font-semibold text-white">{result.tokenName}</dd>
         </div>
-        <div className="rounded-xl border border-cyan-400/20 bg-cyan-500/5 px-4 py-3">
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/70">
+        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-3">
+          <dt className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70">
             Ticker
           </dt>
-          <dd className="mt-1 font-mono text-lg font-semibold text-cyan-300">
+          <dd className="mt-1 font-mono text-lg font-semibold text-emerald-300">
             ${result.ticker}
           </dd>
         </div>
@@ -55,7 +55,7 @@ export function KitBasics({ result, variant, className = "" }: KitBasicsProps) {
             {variant === "preview" ? narrativePreview : result.narrativeSummary}
           </dd>
           {variant === "preview" ? (
-            <p className="mt-2 text-xs text-violet-400/80">
+            <p className="mt-2 text-xs text-cyan-400/80">
               Upgrade to Launch for the full memecoin launch kit.
             </p>
           ) : null}

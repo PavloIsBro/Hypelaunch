@@ -1,12 +1,12 @@
 import type { ReactNode, SVGProps } from "react";
 
-type Accent = "cyan" | "violet" | "emerald" | "amber" | "rose" | "sky";
+/** Rating scale (best → worst): green → blue → yellow → red. No purple. */
+type Accent = "emerald" | "cyan" | "amber" | "rose";
 
 type StrategyCardProps = {
   title: string;
   subtitle: string;
   body: string;
-  accent?: Accent;
   icon?: "pulse" | "compete" | "gauge" | "signal" | "timing" | "risk" | "target";
   className?: string;
 };
@@ -22,67 +22,52 @@ const ACCENT: Record<
     iconBg: string;
     iconText: string;
     chip: string;
+    blob: string;
   }
 > = {
-  cyan: {
-    border: "border-cyan-400/30 hover:border-cyan-300/50",
-    glow: "shadow-[0_0_24px_-8px_rgba(34,211,238,0.35)]",
-    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(34,211,238,0.55)]",
-    badge: "border-cyan-400/35 bg-cyan-500/10 text-cyan-300",
-    bar: "from-cyan-400 to-sky-300",
-    iconBg: "bg-cyan-500/15 border-cyan-400/30",
-    iconText: "text-cyan-300",
-    chip: "border-cyan-400/25 bg-cyan-500/10 text-cyan-200",
-  },
-  violet: {
-    border: "border-violet-400/30 hover:border-violet-300/50",
-    glow: "shadow-[0_0_24px_-8px_rgba(167,139,250,0.35)]",
-    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(167,139,250,0.55)]",
-    badge: "border-violet-400/35 bg-violet-500/10 text-violet-300",
-    bar: "from-violet-400 to-fuchsia-300",
-    iconBg: "bg-violet-500/15 border-violet-400/30",
-    iconText: "text-violet-300",
-    chip: "border-violet-400/25 bg-violet-500/10 text-violet-200",
-  },
   emerald: {
-    border: "border-emerald-400/30 hover:border-emerald-300/50",
-    glow: "shadow-[0_0_24px_-8px_rgba(52,211,153,0.35)]",
-    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(52,211,153,0.55)]",
-    badge: "border-emerald-400/35 bg-emerald-500/10 text-emerald-300",
+    border: "border-emerald-400/35 hover:border-emerald-300/55",
+    glow: "shadow-[0_0_24px_-8px_rgba(52,211,153,0.4)]",
+    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(52,211,153,0.6)]",
+    badge: "border-emerald-400/40 bg-emerald-500/15 text-emerald-300",
     bar: "from-emerald-400 to-teal-300",
-    iconBg: "bg-emerald-500/15 border-emerald-400/30",
+    iconBg: "bg-emerald-500/15 border-emerald-400/35",
     iconText: "text-emerald-300",
-    chip: "border-emerald-400/25 bg-emerald-500/10 text-emerald-200",
+    chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
+    blob: "rgba(52,211,153,0.4)",
+  },
+  cyan: {
+    border: "border-cyan-400/35 hover:border-cyan-300/55",
+    glow: "shadow-[0_0_24px_-8px_rgba(34,211,238,0.4)]",
+    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(34,211,238,0.6)]",
+    badge: "border-cyan-400/40 bg-cyan-500/15 text-cyan-300",
+    bar: "from-cyan-400 to-sky-300",
+    iconBg: "bg-cyan-500/15 border-cyan-400/35",
+    iconText: "text-cyan-300",
+    chip: "border-cyan-400/30 bg-cyan-500/10 text-cyan-200",
+    blob: "rgba(34,211,238,0.4)",
   },
   amber: {
-    border: "border-amber-400/30 hover:border-amber-300/50",
-    glow: "shadow-[0_0_24px_-8px_rgba(251,191,36,0.3)]",
-    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(251,191,36,0.5)]",
-    badge: "border-amber-400/35 bg-amber-500/10 text-amber-300",
-    bar: "from-amber-400 to-orange-300",
-    iconBg: "bg-amber-500/15 border-amber-400/30",
+    border: "border-amber-400/35 hover:border-amber-300/55",
+    glow: "shadow-[0_0_24px_-8px_rgba(251,191,36,0.35)]",
+    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(251,191,36,0.55)]",
+    badge: "border-amber-400/40 bg-amber-500/15 text-amber-300",
+    bar: "from-amber-400 to-yellow-300",
+    iconBg: "bg-amber-500/15 border-amber-400/35",
     iconText: "text-amber-300",
-    chip: "border-amber-400/25 bg-amber-500/10 text-amber-200",
+    chip: "border-amber-400/30 bg-amber-500/10 text-amber-200",
+    blob: "rgba(251,191,36,0.35)",
   },
   rose: {
-    border: "border-rose-400/30 hover:border-rose-300/50",
-    glow: "shadow-[0_0_24px_-8px_rgba(251,113,133,0.3)]",
-    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(251,113,133,0.5)]",
-    badge: "border-rose-400/35 bg-rose-500/10 text-rose-300",
-    bar: "from-rose-400 to-pink-300",
-    iconBg: "bg-rose-500/15 border-rose-400/30",
+    border: "border-rose-400/35 hover:border-rose-300/55",
+    glow: "shadow-[0_0_24px_-8px_rgba(251,113,133,0.35)]",
+    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(251,113,133,0.55)]",
+    badge: "border-rose-400/40 bg-rose-500/15 text-rose-300",
+    bar: "from-rose-500 to-red-400",
+    iconBg: "bg-rose-500/15 border-rose-400/35",
     iconText: "text-rose-300",
-    chip: "border-rose-400/25 bg-rose-500/10 text-rose-200",
-  },
-  sky: {
-    border: "border-sky-400/30 hover:border-sky-300/50",
-    glow: "shadow-[0_0_24px_-8px_rgba(56,189,248,0.35)]",
-    glowHover: "hover:shadow-[0_0_36px_-6px_rgba(56,189,248,0.55)]",
-    badge: "border-sky-400/35 bg-sky-500/10 text-sky-300",
-    bar: "from-sky-400 to-cyan-300",
-    iconBg: "bg-sky-500/15 border-sky-400/30",
-    iconText: "text-sky-300",
-    chip: "border-sky-400/25 bg-sky-500/10 text-sky-200",
+    chip: "border-rose-400/30 bg-rose-500/10 text-rose-200",
+    blob: "rgba(251,113,133,0.35)",
   },
 };
 
@@ -174,65 +159,78 @@ function extractPercent(text: string): number | null {
   return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
 }
 
-function inferMetric(title: string, body: string): {
+type Metric = {
   label: string;
   value: number;
   status: string;
-} {
+  /** Higher raw value is worse (saturation, risk, overlap). */
+  inverted: boolean;
+};
+
+function inferMetric(title: string, body: string): Metric {
   const lower = `${title} ${body}`.toLowerCase();
   const pct = extractPercent(body);
 
   if (lower.includes("timing") || lower.includes("enter") || lower.includes("wait") || lower.includes("avoid")) {
     if (/\benter\b/.test(lower) && !/\bavoid\b/.test(lower)) {
-      return { label: "Signal", value: pct ?? 82, status: "ENTER" };
+      return { label: "Signal", value: pct ?? 82, status: "ENTER", inverted: false };
     }
     if (/\bwait\b/.test(lower)) {
-      return { label: "Signal", value: pct ?? 48, status: "WAIT" };
+      return { label: "Signal", value: pct ?? 48, status: "WAIT", inverted: false };
     }
     if (/\bavoid\b/.test(lower)) {
-      return { label: "Signal", value: pct ?? 22, status: "AVOID" };
+      return { label: "Signal", value: pct ?? 22, status: "AVOID", inverted: false };
     }
-    return { label: "Signal", value: pct ?? 65, status: "WATCH" };
+    return { label: "Signal", value: pct ?? 65, status: "WATCH", inverted: false };
   }
 
   if (lower.includes("saturation") || lower.includes("crowding")) {
     if (lower.includes("high") || lower.includes("crowded")) {
-      return { label: "Saturation", value: pct ?? 78, status: "HIGH" };
+      return { label: "Saturation", value: pct ?? 78, status: "HIGH", inverted: true };
     }
     if (lower.includes("low") || lower.includes("open")) {
-      return { label: "Saturation", value: pct ?? 28, status: "LOW" };
+      return { label: "Saturation", value: pct ?? 28, status: "LOW", inverted: true };
     }
-    return { label: "Saturation", value: pct ?? 54, status: "MODERATE" };
+    return { label: "Saturation", value: pct ?? 54, status: "MODERATE", inverted: true };
   }
 
   if (lower.includes("risk")) {
     if (lower.includes("high") || lower.includes("critical")) {
-      return { label: "Risk level", value: pct ?? 74, status: "ELEVATED" };
+      return { label: "Risk level", value: pct ?? 74, status: "ELEVATED", inverted: true };
     }
     if (lower.includes("low")) {
-      return { label: "Risk level", value: pct ?? 30, status: "CONTAINED" };
+      return { label: "Risk level", value: pct ?? 30, status: "CONTAINED", inverted: true };
     }
-    return { label: "Risk level", value: pct ?? 58, status: "WATCH" };
+    return { label: "Risk level", value: pct ?? 58, status: "WATCH", inverted: true };
   }
 
   if (lower.includes("competitor") || lower.includes("lookalike")) {
-    return { label: "Overlap", value: pct ?? 61, status: "ACTIVE" };
+    return { label: "Overlap", value: pct ?? 61, status: "ACTIVE", inverted: true };
   }
 
   if (lower.includes("narrative") || lower.includes("meta")) {
     if (lower.includes("strong") || lower.includes("well") || lower.includes("fits")) {
-      return { label: "Meta fit", value: pct ?? 76, status: "STRONG" };
+      return { label: "Meta fit", value: pct ?? 76, status: "STRONG", inverted: false };
     }
-    return { label: "Meta fit", value: pct ?? 58, status: "MIXED" };
+    return { label: "Meta fit", value: pct ?? 58, status: "MIXED", inverted: false };
   }
 
   if (lower.includes("positioning") || lower.includes("differentiate")) {
-    return { label: "Edge", value: pct ?? 71, status: "READY" };
+    return { label: "Edge", value: pct ?? 71, status: "READY", inverted: false };
   }
 
-  // Stable visual fill from content length so cards aren't empty
   const fallback = 40 + (body.length % 45);
-  return { label: "Signal strength", value: pct ?? fallback, status: "LIVE" };
+  return { label: "Signal strength", value: pct ?? fallback, status: "LIVE", inverted: false };
+}
+
+/** Green = best, blue = good, yellow = caution, red = worst. */
+function accentFromRating(metric: Metric): Accent {
+  const quality = metric.inverted ? 100 - metric.value : metric.value;
+
+  if (quality >= 70) return "emerald";
+  if (quality >= 50) return "cyan";
+  if (quality >= 30) return "amber";
+  return "rose";
 }
 
 function highlightBody(body: string): ReactNode {
@@ -260,12 +258,12 @@ export function StrategyCard({
   title,
   subtitle,
   body,
-  accent = "violet",
   icon = "pulse",
   className = "",
 }: StrategyCardProps) {
-  const theme = ACCENT[accent];
   const metric = inferMetric(title, body);
+  const accent = accentFromRating(metric);
+  const theme = ACCENT[accent];
   const tickers = extractTickers(body);
 
   return (
@@ -281,20 +279,7 @@ export function StrategyCard({
     >
       <div
         className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-40 blur-2xl transition group-hover:opacity-70"
-        style={{
-          background:
-            accent === "cyan"
-              ? "rgba(34,211,238,0.35)"
-              : accent === "emerald"
-                ? "rgba(52,211,153,0.35)"
-                : accent === "amber"
-                  ? "rgba(251,191,36,0.3)"
-                  : accent === "rose"
-                    ? "rgba(251,113,133,0.3)"
-                    : accent === "sky"
-                      ? "rgba(56,189,248,0.35)"
-                      : "rgba(167,139,250,0.35)",
-        }}
+        style={{ background: theme.blob }}
       />
 
       <div className="relative flex items-start justify-between gap-3">
@@ -339,7 +324,7 @@ export function StrategyCard({
 
       <div className="relative mt-4">
         <div className="mb-1.5 flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-600">
-          <span>Intensity</span>
+          <span>Rating</span>
           <span className="font-mono text-zinc-400">{metric.value}/100</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
