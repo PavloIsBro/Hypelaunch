@@ -1,16 +1,10 @@
 "use client";
 
-import { AutomationAddonsSection } from "@/components/AutomationAddonsSection";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  addonsTotalSol,
-  AUTOMATION_ADDON_PRICE_SOL,
-  EMPTY_ADDONS,
-  type PurchasedAddons,
-} from "@/lib/addons";
-import { getExtraPriceSol, getProPriceSol } from "@/lib/solana-env";
+import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
+import { getProPriceSol } from "@/lib/solana-env";
 import type { PaidPlan } from "@/lib/types";
 
 type PaymentUnlockProps = {
@@ -38,31 +32,15 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
 
   const [stage, setStage] = useState<MockStage | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [addonSelection, setAddonSelection] = useState<PurchasedAddons>(EMPTY_ADDONS);
 
-  const proSol = getProPriceSol();
-  const extraSol = getExtraPriceSol();
-  const planLabel = targetPlan === "pro" ? "Pro" : "Extra";
-
-  const planBaseSol = useMemo(() => {
-    if (unlocked === "pro" && targetPlan === "extra") {
-      return Math.max(0, extraSol - proSol);
-    }
-    return targetPlan === "pro" ? proSol : extraSol;
-  }, [extraSol, proSol, targetPlan, unlocked]);
-
-  const addonsSol = addonsTotalSol(addonSelection);
-  const totalSol = planBaseSol + addonsSol;
-
-  const alreadyUnlocked =
-    (targetPlan === "pro" && (unlocked === "pro" || unlocked === "extra")) ||
-    (targetPlan === "extra" && unlocked === "extra");
+  const planLabel = "Launch";
+  const totalSol = useMemo(() => getProPriceSol(), []);
+  const alreadyUnlocked = unlocked === "pro";
 
   useEffect(() => {
     openedModalRef.current = false;
     setStage(null);
     setProcessing(false);
-    setAddonSelection(EMPTY_ADDONS);
   }, [targetPlan]);
 
   useEffect(() => {
@@ -89,8 +67,8 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
 
     setStage("confirmed");
     await new Promise((r) => window.setTimeout(r, 700));
-    onUnlocked(targetPlan, { ...addonSelection });
-  }, [addonSelection, onUnlocked, setVisible, targetPlan, wallet.connected]);
+    onUnlocked(targetPlan, { ...EMPTY_ADDONS });
+  }, [onUnlocked, setVisible, targetPlan, wallet.connected]);
 
   if (alreadyUnlocked) {
     return (
@@ -136,7 +114,7 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
             <div>
               <p className="text-sm font-medium text-white">Connect Phantom wallet</p>
               <p className="mt-1 max-w-sm text-xs text-zinc-500">
-                Connect your wallet, then choose optional automation add-ons.
+                Connect your wallet to unlock Launch for {totalSol.toFixed(2)} SOL.
               </p>
             </div>
             <button
@@ -170,24 +148,8 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
               <ul className="mt-4 space-y-2 border-t border-white/5 pt-4 text-sm">
                 <li className="flex justify-between text-zinc-400">
                   <span>{planLabel}</span>
-                  <span className="font-mono text-zinc-300">{planBaseSol.toFixed(2)} SOL</span>
+                  <span className="font-mono text-zinc-300">{totalSol.toFixed(2)} SOL</span>
                 </li>
-                {addonSelection.x ? (
-                  <li className="flex justify-between text-zinc-400">
-                    <span>X/Twitter Automation</span>
-                    <span className="font-mono text-violet-300/90">
-                      +{AUTOMATION_ADDON_PRICE_SOL.toFixed(2)} SOL
-                    </span>
-                  </li>
-                ) : null}
-                {addonSelection.telegram ? (
-                  <li className="flex justify-between text-zinc-400">
-                    <span>Telegram Automation</span>
-                    <span className="font-mono text-violet-300/90">
-                      +{AUTOMATION_ADDON_PRICE_SOL.toFixed(2)} SOL
-                    </span>
-                  </li>
-                ) : null}
                 <li className="flex justify-between border-t border-white/5 pt-3 font-semibold text-white">
                   <span>Total</span>
                   <span className="font-mono text-xl text-violet-300">
@@ -196,12 +158,6 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
                 </li>
               </ul>
             </div>
-
-            <AutomationAddonsSection
-              selected={addonSelection}
-              onChange={setAddonSelection}
-              disabled={processing}
-            />
 
             <div className="flex gap-2 text-[11px] text-zinc-500">
               <span className="rounded-full border border-white/10 px-2 py-0.5">Solana devnet</span>
@@ -282,8 +238,7 @@ export function PaymentUnlock({ targetPlan, unlocked, onUnlocked }: PaymentUnloc
 
             {stage === "confirmed" ? (
               <p className="text-center text-sm font-semibold text-emerald-400">
-                Payment confirmed — unlocking {planLabel}
-                {addonsSol > 0 ? " + add-ons" : ""}…
+                Payment confirmed — unlocking {planLabel}…
               </p>
             ) : null}
           </div>

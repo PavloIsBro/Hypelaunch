@@ -18,7 +18,7 @@ export function AutomationPreview({
   return (
     <section className={`glass-card rounded-2xl p-6 ${className}`}>
       <h2 className="text-sm font-semibold text-white">Automation</h2>
-      <p className="mt-0.5 text-xs text-zinc-500">Optional launch automation (Extra + add-on)</p>
+      <p className="mt-0.5 text-xs text-zinc-500">X &amp; Telegram content and automation setup</p>
       <div
         className={[
           "mt-5 grid gap-3",

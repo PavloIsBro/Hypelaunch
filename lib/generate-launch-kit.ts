@@ -83,7 +83,7 @@ Field rules:
 - riskNotes: concrete launch risks (saturation, confusion, copycats, weak hook)
 - recommendedPositioning: how to differentiate in one tight positioning frame
 - landingPage: structured JSON for a React landing template (NOT HTML). Fields: tagline, shortNarrative, audience, colorPalette (hex primary/secondary/accent/background — dark crypto-native), heroTitle, heroSubtitle, aboutSection, communitySection, ctaText, pumpFunButtonLabel (e.g. "Trade on Pump.fun"), xLinkLabel, telegramLinkLabel. Memecoin voice; no corporate tone.
-- launchExecutionLayer: Extra-tier launch ops checklist (Pump.fun deploy window, liquidity timing, CT coordination beats) — no tweet drafts
+- launchExecutionLayer: Launch-tier ops checklist (Pump.fun deploy window, liquidity timing, CT coordination beats) — no tweet drafts
 - Do NOT generate tweets, Telegram Q&A, or social post examples
 - plan context: ${plan} (still output full JSON)
 ${addonNotes.length ? `- ${addonNotes.join("\n- ")}` : ""}

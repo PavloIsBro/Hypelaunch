@@ -1,5 +1,5 @@
 import type { PaidPlan } from "@/lib/types";
-import { getExtraPriceSol, getProPriceSol } from "@/lib/solana-env";
+import { getProPriceSol } from "@/lib/solana-env";
 
 export type PlanId = "free" | PaidPlan;
 
@@ -31,19 +31,7 @@ export const PRICING_PLANS: PricingPlanMeta[] = [
       "Full launch kit for your memecoin",
       "Image concept + landing with Customer journey map",
       "Interest Score + positioning & audience",
-      "X & Telegram content + automation setup",
-    ],
-  },
-  {
-    id: "extra",
-    label: "Extra",
-    priceLabel: `${getExtraPriceSol()} SOL`,
-    badge: { text: "Advanced", variant: "advanced" },
-    bullets: [
-      "Everything in Launch",
-      "AI-generated landing page preview",
-      "Launch execution layer",
-      "Optional X / Telegram automation at checkout",
+      "Launch readiness report",
     ],
   },
 ];

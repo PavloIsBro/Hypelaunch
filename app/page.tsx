@@ -2,7 +2,6 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { PlanId } from "@/lib/plans";
-import { AutomationPreview } from "@/components/AutomationPreview";
 import { Background } from "@/components/Background";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
@@ -12,7 +11,6 @@ import { LaunchExecutionPreview } from "@/components/LaunchExecutionPreview";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PaymentUnlock } from "@/components/PaymentUnlock";
 import { PricingCards } from "@/components/PricingCards";
-import { PurchasedAddonsBadges } from "@/components/PurchasedAddonsBadges";
 import { ResultTierBadge } from "@/components/ResultTierBadge";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
 import { ScoreInsights } from "@/components/ScoreInsights";
@@ -149,8 +147,7 @@ export default function HomePage() {
     void handleGenerate("check");
   };
 
-  const showProContent = unlocked === "pro" || unlocked === "extra";
-  const showExtraContent = unlocked === "extra";
+  const showLaunchContent = unlocked === "pro";
 
   return (
     <>
@@ -171,10 +168,6 @@ export default function HomePage() {
           <h2 className="animate-fade-up stagger-1 mt-5 max-w-2xl text-pretty text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
             Make memecoin with one prompt
           </h2>
-
-          <p className="animate-fade-up stagger-1 mt-3 max-w-lg text-pretty text-base text-zinc-400 sm:text-lg">
-            From idea to launch kit — name, ticker, narrative, and Interest Score in minutes
-          </p>
 
           <form onSubmit={handleSubmit} className="animate-fade-up stagger-2 mt-10 w-full max-w-2xl">
             <label htmlFor="idea" className="sr-only">
@@ -222,8 +215,8 @@ export default function HomePage() {
           {!fullResult && !generateError ? (
             <p className="animate-fade-in stagger-3 mt-8 max-w-md text-xs leading-relaxed text-zinc-600">
               <span className="text-zinc-400">Check</span> — free name, ticker, short description &amp;
-              Interest Score · <span className="text-zinc-400">Launch</span> — full Pro launch kit
-              (landing, journey map, X &amp; Telegram)
+              Interest Score · <span className="text-zinc-400">Launch</span> — full launch kit for{" "}
+              0.2 SOL
             </p>
           ) : null}
         </header>
@@ -241,10 +234,9 @@ export default function HomePage() {
             <div className="animate-fade-up flex flex-col gap-3 border-b border-white/5 pb-6">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-violet-400/80">
-                  {unlocked ? "Full intelligence report" : "Limited preview"}
+                  {unlocked ? "Full launch kit" : "Check preview"}
                 </p>
                 <ResultTierBadge unlocked={unlocked} />
-                <PurchasedAddonsBadges addons={purchasedAddons} />
               </div>
               <h2 className="text-2xl font-bold text-white sm:text-3xl">
                 {fullResult.tokenName}{" "}
@@ -267,8 +259,8 @@ export default function HomePage() {
                 label="Launch Readiness Score"
                 score={fullResult.launchReadinessScore}
                 accent="cyan"
-                animate={showProContent}
-                locked={!showProContent}
+                animate={showLaunchContent}
+                locked={!showLaunchContent}
                 className="animate-fade-up stagger-2"
               />
             </div>
@@ -276,17 +268,17 @@ export default function HomePage() {
             <ScoreInsights
               interestReasoning={fullResult.interestReasoning}
               launchReadinessReasoning={fullResult.launchReadinessReasoning}
-              variant={showProContent ? "full" : "preview"}
+              variant={showLaunchContent ? "full" : "preview"}
               className="animate-fade-up"
             />
 
             <KitBasics
               result={fullResult}
-              variant={showProContent ? "full" : "preview"}
+              variant={showLaunchContent ? "full" : "preview"}
               className="animate-fade-up stagger-2"
             />
 
-            {showProContent ? (
+            {showLaunchContent ? (
               <div className="grid gap-4 lg:grid-cols-2">
                 {PRO_INTELLIGENCE_SECTIONS.map((section) => (
                   <StrategyCard
@@ -301,14 +293,13 @@ export default function HomePage() {
             ) : (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
                 <p className="text-zinc-400">
-                  Pump.fun narrative analysis, competitor scan, market saturation, timing signal,
-                  risk notes, and positioning unlock with{" "}
-                  <span className="text-violet-300">Pro</span>.
+                  Full positioning, landing, and Customer journey map unlock with{" "}
+                  <span className="text-violet-300">Launch</span>.
                 </p>
               </div>
             )}
 
-            {showExtraContent ? (
+            {showLaunchContent ? (
               <>
                 <LandingPreview
                   landing={fullResult.landingPage}
@@ -319,30 +310,6 @@ export default function HomePage() {
                   className="animate-fade-up"
                 />
               </>
-            ) : unlocked === "pro" ? (
-              <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-violet-500/20 p-8 text-center text-sm text-zinc-500">
-                <p>
-                  <span className="text-violet-300">Extra</span> adds AI landing page preview and
-                  launch execution layer — unlock below.
-                </p>
-              </div>
-            ) : null}
-
-            {showExtraContent && (purchasedAddons.x || purchasedAddons.telegram) ? (
-              <AutomationPreview
-                xPosting={fullResult.automation.xPosting}
-                telegramBot={fullResult.automation.telegramBot}
-                enabled={purchasedAddons}
-                className="animate-fade-up"
-              />
-            ) : showExtraContent ? (
-              <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-zinc-500">
-                <p>
-                  Add optional <span className="text-violet-300">X</span> or{" "}
-                  <span className="text-cyan-300">Telegram</span> launch automation at checkout
-                  (+0.1 SOL each).
-                </p>
-              </div>
             ) : null}
 
             <div className="space-y-4 pt-4">
@@ -365,17 +332,14 @@ export default function HomePage() {
               />
             </div>
 
-            {selectedPaid && (unlocked === null || (unlocked === "pro" && selectedPaid === "extra")) ? (
+            {selectedPaid && unlocked === null ? (
               <div id="payment-unlock" className="scroll-mt-8">
                 <PaymentUnlock
                   targetPlan={selectedPaid}
                   unlocked={unlocked}
-                  onUnlocked={(plan, addons) => {
+                  onUnlocked={(plan) => {
                     setUnlocked(plan);
-                    setPurchasedAddons((prev) => ({
-                      x: prev.x || addons.x,
-                      telegram: prev.telegram || addons.telegram,
-                    }));
+                    setPurchasedAddons(EMPTY_ADDONS);
                     setSelectedPaid(null);
                   }}
                 />

@@ -15,7 +15,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Flow
 
 1. Enter a memecoin idea on the landing page.
-2. Click **Run free intelligence preview** — server calls `/api/generate` (OpenAI or fallback mock).
-3. View scores and market intelligence; unlock Pro / Extra via mock Solana payment.
+2. Click **Check** for a free preview or **Launch** for the full paid kit.
+3. Unlock **Launch** via mock Solana payment to reveal landing, journey map, and X/Telegram content.
 
 Generation: `lib/generate-launch-kit.ts` (server) · fallback: `lib/mock.ts`.

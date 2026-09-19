@@ -27,6 +27,6 @@ export type LaunchKitFull = {
   };
 };
 
-export type PaidPlan = "pro" | "extra";
+export type PaidPlan = "pro";
 
 export type { PurchasedAddons } from "./addons";

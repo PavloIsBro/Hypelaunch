@@ -106,7 +106,7 @@ export function ScoreRing({
       {locked ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-[2px]">
           <span className="rounded-full border border-white/15 bg-black/80 px-3 py-1 text-xs text-zinc-300">
-            Locked — Pro
+            Locked — Launch
           </span>
         </div>
       ) : null}

@@ -23,7 +23,8 @@ function parseAddons(raw: Partial<PurchasedAddons> | undefined): PurchasedAddons
 }
 
 function parsePlan(raw: unknown): PlanId {
-  if (raw === "pro" || raw === "extra" || raw === "free") return raw;
+  if (raw === "pro" || raw === "free") return raw;
+  if (raw === "extra") return "pro";
   return "free";
 }
 

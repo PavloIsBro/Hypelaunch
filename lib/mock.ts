@@ -41,7 +41,7 @@ function parseIdea(idea: string) {
   return { base, tokenName, ticker, words };
 }
 
-/** Always returns the full Extra-tier dataset; UI gates by payment. */
+/** Always returns the full Launch-tier dataset; UI gates by payment. */
 export function generateMockLaunchKit(idea: string): LaunchKitFull {
   const trimmed = idea.trim();
   const seed = hashString(trimmed.toLowerCase() || "hypelaunch");

@@ -41,7 +41,7 @@ export function KitBasics({ result, variant, className = "" }: KitBasicsProps) {
           </dd>
           {variant === "preview" ? (
             <p className="mt-2 text-xs text-violet-400/80">
-              Upgrade to Pro for full Pump.fun market intelligence.
+              Upgrade to Launch for the full memecoin launch kit.
             </p>
           ) : null}
         </div>

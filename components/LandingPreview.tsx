@@ -157,11 +157,11 @@ export function LandingPreview({ landing, className = "" }: LandingPreviewProps)
         <div>
           <h2 className="text-sm font-semibold text-white">Landing page preview</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
-            AI-generated layout · fixed React template (Extra)
+            AI-generated layout · included in Launch
           </p>
         </div>
         <span className="rounded-full border border-violet-500/25 bg-violet-500/10 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-violet-300">
-          Extra
+          Launch
         </span>
       </div>
 
