@@ -300,7 +300,7 @@ export default function HomePage() {
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
                 <p className="text-zinc-400">
                   Full positioning, landing, and Customer journey map unlock with{" "}
-                  <span className="text-violet-300">Launch</span>.
+                  <span className="text-emerald-300">Launch</span>.
                 </p>
               </div>
             )}
