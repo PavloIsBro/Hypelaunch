@@ -3,6 +3,12 @@ import type { LandingPageContent } from "./landing-page";
 export type { LandingColorPalette, LandingPageContent } from "./landing-page";
 
 /** Full intelligence report (generated once per idea); UI reveals by unlock tier. */
+export type TrendRecommendation = {
+  prompt: string;
+  interestScore: number;
+  launchReadinessScore: number;
+};
+
 export type LaunchKitFull = {
   idea: string;
   tokenName: string;
@@ -19,6 +25,8 @@ export type LaunchKitFull = {
   launchTimingSignal: string;
   riskNotes: string;
   recommendedPositioning: string;
+  /** Ready-to-run alternate prompts angled to current X trends — no explanations. */
+  trendRecommendations: TrendRecommendation[];
   landingPage: LandingPageContent;
   launchExecutionLayer: string;
   automation: {

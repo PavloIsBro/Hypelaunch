@@ -131,6 +131,23 @@ export function generateMockLaunchKit(idea: string): LaunchKitFull {
       ],
       seed + 8,
     ),
+    trendRecommendations: [
+      {
+        prompt: `${base} as Patron-style demining hero dog that saves lives under fire`,
+        interestScore: Math.min(98, interestScore + 8 + (seed % 5)),
+        launchReadinessScore: Math.min(96, launchReadinessScore + 6 + (seed % 4)),
+      },
+      {
+        prompt: `${base} as wartime rescue mascot who clears danger and goes viral on CT`,
+        interestScore: Math.min(97, interestScore + 5 + ((seed >> 2) % 6)),
+        launchReadinessScore: Math.min(95, launchReadinessScore + 4 + ((seed >> 1) % 5)),
+      },
+      {
+        prompt: `${base} as frontline protector animal with a name, mission, and memeable gear`,
+        interestScore: Math.min(95, interestScore + 3 + ((seed >> 3) % 7)),
+        launchReadinessScore: Math.min(94, launchReadinessScore + 2 + ((seed >> 4) % 6)),
+      },
+    ],
     landingPage: mapLandingPageFields(tokenName, ticker, {
       tagline: pick(
         [

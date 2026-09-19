@@ -16,6 +16,16 @@ export const aiLaunchKitSchema = z.object({
   launchTimingSignal: z.string(),
   riskNotes: z.string(),
   recommendedPositioning: z.string(),
+  trendRecommendations: z
+    .array(
+      z.object({
+        prompt: z.string(),
+        interestScore: z.number().int().min(0).max(100),
+        launchReadinessScore: z.number().int().min(0).max(100),
+      }),
+    )
+    .min(2)
+    .max(4),
   landingPage: landingPageSchema,
   launchExecutionLayer: z.string(),
   automation: z.object({

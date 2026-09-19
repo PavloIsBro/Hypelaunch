@@ -31,7 +31,7 @@ export const PRICING_PLANS: PricingPlanMeta[] = [
       "Full launch kit for your memecoin",
       "Image concept + landing with Customer journey map",
       "Interest Score + positioning & audience",
-      "Launch readiness report",
+      "X-trend ready prompts with score comparison",
     ],
   },
 ];

@@ -12,6 +12,7 @@ import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PaymentUnlock } from "@/components/PaymentUnlock";
 import { PricingCards } from "@/components/PricingCards";
 import { ResultTierBadge } from "@/components/ResultTierBadge";
+import { TrendRecommendations } from "@/components/TrendRecommendations";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
 import { ScoreInsights } from "@/components/ScoreInsights";
 import { ScoreRing } from "@/components/ScoreRing";
@@ -85,8 +86,11 @@ export default function HomePage() {
   }, []);
 
   const handleGenerate = useCallback(
-    async (mode: "check" | "launch") => {
-      const trimmed = idea.trim();
+    async (
+      mode: "check" | "launch",
+      options?: { ideaOverride?: string; keepUnlock?: boolean },
+    ) => {
+      const trimmed = (options?.ideaOverride ?? idea).trim();
       if (!trimmed || generateBusyRef.current) return;
 
       generateBusyRef.current = true;
@@ -95,14 +99,23 @@ export default function HomePage() {
       generateAbortRef.current = controller;
       const requestId = ++generateRequestIdRef.current;
 
-      const selectedPlan: PlanId = mode === "launch" ? "pro" : "free";
+      const selectedPlan: PlanId = mode === "launch" || options?.keepUnlock ? "pro" : "free";
       const automationAddons: PurchasedAddons = { ...purchasedAddons };
+      const preserveUnlock = Boolean(options?.keepUnlock && unlocked === "pro");
+
+      if (options?.ideaOverride) {
+        setIdea(options.ideaOverride);
+      }
 
       setLoading(true);
       setFullResult(null);
-      setUnlocked(null);
-      setPurchasedAddons(EMPTY_ADDONS);
-      setSelectedPaid(mode === "launch" ? "pro" : null);
+      if (!preserveUnlock) {
+        setUnlocked(null);
+        setPurchasedAddons(EMPTY_ADDONS);
+        setSelectedPaid(mode === "launch" ? "pro" : null);
+      } else {
+        setSelectedPaid(null);
+      }
       setGenerateError(null);
       setGenerateNotice(null);
 
@@ -119,11 +132,14 @@ export default function HomePage() {
         if (requestId !== generateRequestIdRef.current) return;
 
         setFullResult(data.kit);
+        if (preserveUnlock) {
+          setUnlocked("pro");
+        }
         setGenerateNotice(data.message ?? null);
         window.setTimeout(() => {
           resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 80);
-        if (mode === "launch") {
+        if (mode === "launch" && !preserveUnlock) {
           window.setTimeout(() => {
             document.getElementById("payment-unlock")?.scrollIntoView({
               behavior: "smooth",
@@ -146,7 +162,7 @@ export default function HomePage() {
         }
       }
     },
-    [idea, purchasedAddons],
+    [idea, purchasedAddons, unlocked],
   );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -284,6 +300,23 @@ export default function HomePage() {
             />
 
             {showLaunchContent ? (
+              <TrendRecommendations
+                currentPrompt={fullResult.idea}
+                currentInterest={fullResult.interestScore}
+                currentReadiness={fullResult.launchReadinessScore}
+                recommendations={fullResult.trendRecommendations ?? []}
+                disabled={loading}
+                onSelect={(prompt) => {
+                  void handleGenerate("launch", {
+                    ideaOverride: prompt,
+                    keepUnlock: true,
+                  });
+                }}
+                className="animate-fade-up"
+              />
+            ) : null}
+
+            {showLaunchContent ? (
               <div className="grid gap-4 lg:grid-cols-2">
                 {PRO_INTELLIGENCE_SECTIONS.map((section) => (
                   <StrategyCard
@@ -299,8 +332,8 @@ export default function HomePage() {
             ) : (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
                 <p className="text-zinc-400">
-                  Full positioning, landing, and Customer journey map unlock with{" "}
-                  <span className="text-emerald-300">Launch</span>.
+                  Full positioning, landing, Customer journey map, and X-trend prompt angles unlock
+                  with <span className="text-emerald-300">Launch</span>.
                 </p>
               </div>
             )}

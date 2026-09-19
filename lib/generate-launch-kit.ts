@@ -32,6 +32,14 @@ export function mapAiPayloadToLaunchKit(idea: string, data: AiLaunchKitPayload):
     launchTimingSignal: data.launchTimingSignal.trim(),
     riskNotes: data.riskNotes.trim(),
     recommendedPositioning: data.recommendedPositioning.trim(),
+    trendRecommendations: (data.trendRecommendations ?? [])
+      .slice(0, 4)
+      .map((item) => ({
+        prompt: item.prompt.trim(),
+        interestScore: item.interestScore,
+        launchReadinessScore: item.launchReadinessScore,
+      }))
+      .filter((item) => item.prompt.length > 0),
     landingPage: mapLandingPageFields(
       data.tokenName.trim(),
       ticker,
@@ -82,6 +90,7 @@ Field rules:
 - launchTimingSignal: enter now / wait / avoid — with CT-style timing rationale
 - riskNotes: concrete launch risks (saturation, confusion, copycats, weak hook)
 - recommendedPositioning: how to differentiate in one tight positioning frame
+- trendRecommendations: exactly 3 alternate READY PROMPTS that remix the user's idea against CURRENT X/Twitter hot narratives (war, politics, viral animals, celebs, sports, AI drama, etc.). Each item is ONLY: prompt (1 short ready-to-paste idea sentence), interestScore (0-100), launchReadinessScore (0-100). NO explanations, NO "because", NO trend names in a separate field — the prompt itself must already be the sharper angle. Example: user says "dog memecoin" → prompt like "Patron the demining hero dog who saves lives under fire" with higher projected scores than a generic dog. Scores must be comparable to the main idea and usually stronger when the trend angle is sharper.
 - landingPage: structured JSON for a React landing template (NOT HTML). Fields: tagline, shortNarrative, audience, colorPalette (hex primary/secondary/accent/background — dark crypto-native), heroTitle, heroSubtitle, aboutSection, communitySection, ctaText, pumpFunButtonLabel (e.g. "Trade on Pump.fun"), xLinkLabel, telegramLinkLabel. Memecoin voice; no corporate tone.
 - launchExecutionLayer: Launch-tier ops checklist (Pump.fun deploy window, liquidity timing, CT coordination beats) — no tweet drafts
 - Do NOT generate tweets, Telegram Q&A, or social post examples
