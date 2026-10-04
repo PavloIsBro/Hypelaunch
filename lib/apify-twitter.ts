@@ -193,6 +193,7 @@ function normalizeTweets(rawItems: unknown[]): TwitterTweetSignal[] {
   for (const raw of rawItems) {
     if (!raw || typeof raw !== "object") continue;
     const item = raw as Record<string, unknown>;
+    if (item.noResults === true) continue;
     const text = pickText(item);
     if (!text || text.length < 8) continue;
 
@@ -268,7 +269,9 @@ export function getApifyToken(): string {
 }
 
 function getActorId(): string {
-  return (process.env.APIFY_TWITTER_ACTOR_ID || "apidojo~tweet-scraper").trim();
+  // Lite actor stays under free monthly caps; full tweet-scraper often returns
+  // { noResults: true } once the free run limit is hit.
+  return (process.env.APIFY_TWITTER_ACTOR_ID || "apidojo~twitter-scraper-lite").trim();
 }
 
 function getMaxItems(): number {
@@ -298,10 +301,11 @@ export async function startTwitterScrape(idea: string): Promise<TwitterScrapeSta
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      // Broader recall: Top + no language lock (exact long phrases often return 0)
+      // Broader recall: no language lock (exact long phrases often return 0)
       searchTerms: keywords,
       maxItems,
-      sort: "Top",
+      maxTweets: maxItems,
+      sort: "Latest",
       includeSearchTerms: true,
     }),
   });
@@ -407,25 +411,36 @@ export async function pollTwitterScrape(
 
   const items = (await itemsRes.json()) as unknown;
   const rawList = Array.isArray(items) ? items : [];
+  const noResultOnly =
+    rawList.length > 0 &&
+    rawList.every(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        "noResults" in (row as object) &&
+        Object.keys(row as object).length <= 2,
+    );
   const tweets = normalizeTweets(rawList);
 
   if (!tweets.length) {
     console.warn("[apify] empty tweets after normalize", {
       rawCount: rawList.length,
+      noResultOnly,
+      actorId: getActorId(),
       sampleKeys:
         rawList[0] && typeof rawList[0] === "object"
           ? Object.keys(rawList[0] as object).slice(0, 20)
           : [],
       keywords,
     });
+    const reason = noResultOnly
+      ? "Apify actor hit its free monthly run limit (or blocked search). Switch APIFY_TWITTER_ACTOR_ID to apidojo~twitter-scraper-lite, or upgrade the Apify plan, then Redeploy."
+      : rawList.length
+        ? `Apify returned ${rawList.length} items but no readable tweet text. Try again.`
+        : `No tweets found for: ${keywords.slice(0, 3).join(" · ")}. Try a more popular meme name.`;
     return {
       status: "READY",
-      signals: buildFallbackSignals(
-        idea,
-        rawList.length
-          ? `Apify returned ${rawList.length} items but no readable tweet text. Try again.`
-          : `No tweets found for: ${keywords.slice(0, 3).join(" · ")}. Try a more popular meme name.`,
-      ),
+      signals: buildFallbackSignals(idea, reason),
     };
   }
 
