@@ -203,6 +203,16 @@ function buildSignalsFromTweets(
   };
 }
 
+function getApifyToken(): string {
+  // Accept common aliases / accidental quotes from Vercel UI paste
+  const raw =
+    process.env.APIFY_TOKEN ||
+    process.env.APIFY_API_TOKEN ||
+    process.env.APIFY_API_KEY ||
+    "";
+  return raw.trim().replace(/^["']|["']$/g, "");
+}
+
 /**
  * Scrapes recent X/Twitter posts for keywords derived from the memecoin idea.
  * Uses Apify actor (default: apidojo/tweet-scraper). Token must stay server-side.
@@ -214,10 +224,13 @@ export async function fetchTwitterSignals(idea: string): Promise<TwitterSignals>
     return buildFallbackSignals(trimmed || idea, "No keywords extracted from idea.");
   }
 
-  const token = process.env.APIFY_TOKEN?.trim();
+  const token = getApifyToken();
   if (!token) {
-    console.warn("[apify] APIFY_TOKEN missing");
-    return buildFallbackSignals(trimmed, "APIFY_TOKEN is not configured.");
+    console.warn("[apify] APIFY_TOKEN missing in runtime env");
+    return buildFallbackSignals(
+      trimmed,
+      "APIFY_TOKEN is not configured. Add it in Vercel → Settings → Environment Variables (Production), then Redeploy.",
+    );
   }
 
   const actorId = (process.env.APIFY_TWITTER_ACTOR_ID || "apidojo~tweet-scraper").trim();
