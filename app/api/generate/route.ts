@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
-import { fetchTwitterSignals } from "@/lib/apify-twitter";
 import { generateLaunchKitWithOpenAI } from "@/lib/generate-launch-kit";
 import type { PlanId } from "@/lib/plans";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+/** Keep generate under Vercel limits — Twitter scrape is separate & polled. */
+export const maxDuration = 30;
 
 type GenerateBody = {
   idea?: string;
@@ -58,38 +58,18 @@ export async function POST(request: Request) {
     const plan = parsePlan(body.selectedPlan ?? body.plan);
     const addons = parseAddons(body.automationAddons ?? body.addons ?? EMPTY_ADDONS);
 
-    const twitterSignals = await fetchTwitterSignals(idea);
-    console.log("[api/generate] twitter signals", {
-      source: twitterSignals.source,
-      tweets: twitterSignals.tweetCount,
-      attention: twitterSignals.attentionScore,
-      keywords: twitterSignals.keywords,
-    });
-
-    const { kit, source } = await generateLaunchKitWithOpenAI(
-      idea,
-      plan,
-      addons,
-      twitterSignals,
-    );
+    // Do NOT block on Apify here — it causes Vercel 504. Client polls /api/twitter-signals.
+    const { kit, source } = await generateLaunchKitWithOpenAI(idea, plan, addons);
 
     console.log("[api/generate] success", { source, ticker: kit.ticker });
-
-    const notices: string[] = [];
-    if (source === "fallback") {
-      notices.push(
-        "AI is temporarily unavailable. Showing an estimated demo report — try again shortly.",
-      );
-    }
-    if (twitterSignals.source === "fallback" && twitterSignals.error) {
-      notices.push(`X scrape: ${twitterSignals.error}`);
-    }
 
     return NextResponse.json({
       kit,
       source,
-      twitterSource: twitterSignals.source,
-      message: notices.length ? notices.join(" ") : undefined,
+      message:
+        source === "fallback"
+          ? "AI is temporarily unavailable. Showing an estimated demo report — try again shortly."
+          : undefined,
     });
   } catch (error) {
     console.error("[api/generate]", error);

@@ -22,6 +22,13 @@ export type TwitterSignals = {
   error?: string;
 };
 
+export type TwitterScrapeStart = {
+  runId: string;
+  datasetId?: string;
+  keywords: string[];
+  idea: string;
+};
+
 const STOP_WORDS = new Set([
   "a",
   "an",
@@ -79,7 +86,6 @@ export function extractTwitterKeywords(idea: string): string[] {
     terms.push(unique.slice(0, 3).join(" "));
   }
 
-  // Prefer specific tokens / hashtags as standalone search too
   for (const w of unique) {
     if (w.startsWith("$") || w.startsWith("#") || w.length >= 5) {
       terms.push(w);
@@ -171,7 +177,7 @@ function computeAttentionScore(tweets: TwitterTweetSignal[]): number {
   return Math.max(12, Math.min(96, Math.round(volume + engagement + recencyBoost)));
 }
 
-function buildFallbackSignals(idea: string, reason?: string): TwitterSignals {
+export function buildFallbackSignals(idea: string, reason?: string): TwitterSignals {
   const keywords = extractTwitterKeywords(idea);
   return {
     source: "fallback",
@@ -187,7 +193,6 @@ function buildFallbackSignals(idea: string, reason?: string): TwitterSignals {
 }
 
 function buildSignalsFromTweets(
-  idea: string,
   keywords: string[],
   tweets: TwitterTweetSignal[],
 ): TwitterSignals {
@@ -203,8 +208,7 @@ function buildSignalsFromTweets(
   };
 }
 
-function getApifyToken(): string {
-  // Accept common aliases / accidental quotes from Vercel UI paste
+export function getApifyToken(): string {
   const raw =
     process.env.APIFY_TOKEN ||
     process.env.APIFY_API_TOKEN ||
@@ -213,87 +217,161 @@ function getApifyToken(): string {
   return raw.trim().replace(/^["']|["']$/g, "");
 }
 
-/**
- * Scrapes recent X/Twitter posts for keywords derived from the memecoin idea.
- * Uses Apify actor (default: apidojo/tweet-scraper). Token must stay server-side.
- */
-export async function fetchTwitterSignals(idea: string): Promise<TwitterSignals> {
+function getActorId(): string {
+  return (process.env.APIFY_TWITTER_ACTOR_ID || "apidojo~tweet-scraper").trim();
+}
+
+function getMaxItems(): number {
+  return Math.min(
+    25,
+    Math.max(5, Number.parseInt(process.env.APIFY_MAX_TWEETS || "10", 10) || 10),
+  );
+}
+
+/** Start Apify run asynchronously (does not wait for scrape). Avoids Vercel 504. */
+export async function startTwitterScrape(idea: string): Promise<TwitterScrapeStart | null> {
   const trimmed = idea.trim();
   const keywords = extractTwitterKeywords(trimmed);
-  if (!trimmed || !keywords.length) {
-    return buildFallbackSignals(trimmed || idea, "No keywords extracted from idea.");
-  }
+  if (!trimmed || !keywords.length) return null;
 
   const token = getApifyToken();
   if (!token) {
     console.warn("[apify] APIFY_TOKEN missing in runtime env");
-    return buildFallbackSignals(
-      trimmed,
-      "APIFY_TOKEN is not configured. Add it in Vercel → Settings → Environment Variables (Production), then Redeploy.",
-    );
+    return null;
   }
 
-  const actorId = (process.env.APIFY_TWITTER_ACTOR_ID || "apidojo~tweet-scraper").trim();
-  const maxItems = Math.min(
-    40,
-    Math.max(5, Number.parseInt(process.env.APIFY_MAX_TWEETS || "15", 10) || 15),
+  const actorId = getActorId();
+  const maxItems = getMaxItems();
+  const url = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?token=${encodeURIComponent(token)}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      searchTerms: keywords,
+      maxItems,
+      maxTweets: maxItems,
+      sort: "Latest",
+      tweetLanguage: "en",
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[apify] start run failed", res.status, body.slice(0, 400));
+    throw new Error(`Apify start failed (${res.status}).`);
+  }
+
+  const payload = (await res.json()) as {
+    data?: { id?: string; defaultDatasetId?: string };
+  };
+
+  const runId = payload.data?.id;
+  if (!runId) {
+    throw new Error("Apify did not return a run id.");
+  }
+
+  console.log("[apify] started run", { runId, keywords, maxItems });
+
+  return {
+    runId,
+    datasetId: payload.data?.defaultDatasetId,
+    keywords,
+    idea: trimmed,
+  };
+}
+
+export type TwitterScrapePoll =
+  | { status: "RUNNING" | "READY" | "FAILED"; signals?: TwitterSignals; error?: string };
+
+/** Poll Apify run status and return signals when SUCCEEDED. */
+export async function pollTwitterScrape(
+  runId: string,
+  keywords: string[],
+  idea: string,
+): Promise<TwitterScrapePoll> {
+  const token = getApifyToken();
+  if (!token) {
+    return {
+      status: "FAILED",
+      signals: buildFallbackSignals(
+        idea,
+        "APIFY_TOKEN is not configured. Add it in Vercel → Environment Variables, then Redeploy.",
+      ),
+    };
+  }
+
+  const runRes = await fetch(
+    `https://api.apify.com/v2/actor-runs/${encodeURIComponent(runId)}?token=${encodeURIComponent(token)}`,
+    { cache: "no-store" },
   );
 
-  const url = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
-
-  const controller = new AbortController();
-  const timeoutMs = Number.parseInt(process.env.APIFY_TIMEOUT_MS || "55000", 10) || 55000;
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    console.log("[apify] scraping", { actorId, keywords, maxItems });
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({
-        searchTerms: keywords,
-        maxItems,
-        maxTweets: maxItems,
-        sort: "Latest",
-        tweetLanguage: "en",
-      }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("[apify] HTTP error", res.status, body.slice(0, 400));
-      return buildFallbackSignals(
-        trimmed,
-        `Apify returned ${res.status}. Check token, credits, or actor id.`,
-      );
-    }
-
-    const data = (await res.json()) as unknown;
-    const items = Array.isArray(data) ? data : [];
-    const tweets = normalizeTweets(items);
-
-    if (!tweets.length) {
-      return buildFallbackSignals(
-        trimmed,
-        "Apify returned no tweets for these keywords — try a sharper idea.",
-      );
-    }
-
-    return buildSignalsFromTweets(trimmed, keywords, tweets);
-  } catch (error) {
-    const message =
-      error instanceof Error && error.name === "AbortError"
-        ? "Apify scrape timed out."
-        : error instanceof Error
-          ? error.message
-          : "Apify scrape failed.";
-    console.error("[apify]", message);
-    return buildFallbackSignals(trimmed, message);
-  } finally {
-    clearTimeout(timer);
+  if (!runRes.ok) {
+    return {
+      status: "FAILED",
+      signals: buildFallbackSignals(idea, `Apify run status failed (${runRes.status}).`),
+    };
   }
+
+  const runJson = (await runRes.json()) as {
+    data?: { status?: string; defaultDatasetId?: string };
+  };
+  const status = (runJson.data?.status || "").toUpperCase();
+  const datasetId = runJson.data?.defaultDatasetId;
+
+  if (
+    status === "READY" ||
+    status === "RUNNING" ||
+    status === "ABORTING" ||
+    status === "" ||
+    status === "TIMING-OUT"
+  ) {
+    return { status: "RUNNING" };
+  }
+
+  if (status !== "SUCCEEDED") {
+    return {
+      status: "FAILED",
+      signals: buildFallbackSignals(idea, `Apify run ended with status ${status || "unknown"}.`),
+    };
+  }
+
+  if (!datasetId) {
+    return {
+      status: "FAILED",
+      signals: buildFallbackSignals(idea, "Apify succeeded but dataset id is missing."),
+    };
+  }
+
+  const itemsRes = await fetch(
+    `https://api.apify.com/v2/datasets/${encodeURIComponent(datasetId)}/items?format=json&clean=true&limit=25&token=${encodeURIComponent(token)}`,
+    { cache: "no-store" },
+  );
+
+  if (!itemsRes.ok) {
+    return {
+      status: "FAILED",
+      signals: buildFallbackSignals(idea, `Apify dataset fetch failed (${itemsRes.status}).`),
+    };
+  }
+
+  const items = (await itemsRes.json()) as unknown;
+  const tweets = normalizeTweets(Array.isArray(items) ? items : []);
+
+  if (!tweets.length) {
+    return {
+      status: "READY",
+      signals: buildFallbackSignals(
+        idea,
+        "Apify returned no tweets for these keywords — try a sharper idea.",
+      ),
+    };
+  }
+
+  return {
+    status: "READY",
+    signals: buildSignalsFromTweets(keywords, tweets),
+  };
 }
 
 /** Compact block for the LLM user message. */

@@ -18,7 +18,7 @@ import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
 import { ScoreInsights } from "@/components/ScoreInsights";
 import { ScoreRing } from "@/components/ScoreRing";
 import { StrategyCard } from "@/components/StrategyCard";
-import { fetchLaunchKit } from "@/lib/client-generate";
+import { fetchLaunchKit, fetchTwitterSignalsLive } from "@/lib/client-generate";
 import type { LaunchKitFull, PaidPlan } from "@/lib/types";
 
 const PRO_INTELLIGENCE_SECTIONS = [
@@ -121,6 +121,16 @@ export default function HomePage() {
       setGenerateNotice(null);
 
       try {
+        // Start Twitter scrape in parallel (async Apify run + client poll).
+        // Do NOT await scrape inside /api/generate — that caused Vercel 504.
+        const twitterPromise = fetchTwitterSignalsLive(trimmed, controller.signal, (signals) => {
+          if (requestId !== generateRequestIdRef.current) return;
+          setFullResult((prev) => (prev ? { ...prev, twitterSignals: signals } : prev));
+        }).catch((err) => {
+          console.error("Twitter scrape failed", err);
+          return null;
+        });
+
         const data = await fetchLaunchKit(
           {
             idea: trimmed,
@@ -148,6 +158,12 @@ export default function HomePage() {
             });
           }, 320);
         }
+
+        // Merge live Twitter when scrape finishes (may arrive after kit).
+        void twitterPromise.then((signals) => {
+          if (requestId !== generateRequestIdRef.current || !signals) return;
+          setFullResult((prev) => (prev ? { ...prev, twitterSignals: signals } : prev));
+        });
       } catch (err) {
         if (requestId !== generateRequestIdRef.current) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
@@ -176,7 +192,7 @@ export default function HomePage() {
   return (
     <>
       <Background paused={loading} />
-      {loading ? <LoadingOverlay message="Parsing X + building your launch kit…" /> : null}
+      {loading ? <LoadingOverlay message="Building your launch kit…" /> : null}
 
       <div
         className={[
