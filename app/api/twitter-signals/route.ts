@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import {
   buildFallbackSignals,
   getApifyToken,
+  maybeStartNarrowRetry,
   pollTwitterScrape,
   startTwitterScrape,
 } from "@/lib/apify-twitter";
 
 export const runtime = "nodejs";
-export const maxDuration = 15;
+export const maxDuration = 20;
 
 type StartBody = {
   idea?: string;
@@ -36,6 +37,27 @@ export async function POST(request: Request) {
       }
 
       const result = await pollTwitterScrape(runId, keywords, idea || "idea");
+
+      // Universal empty-result recovery: one narrower keyword retry for any idea.
+      if (
+        (result.status === "READY" || result.status === "FAILED") &&
+        result.signals &&
+        result.signals.tweetCount === 0
+      ) {
+        try {
+          const retry = await maybeStartNarrowRetry(idea || "idea", keywords, result.signals);
+          if (retry) {
+            return NextResponse.json({
+              status: "RUNNING",
+              retryRunId: retry.runId,
+              retryKeywords: retry.keywords,
+            });
+          }
+        } catch (err) {
+          console.warn("[api/twitter-signals] narrow retry failed", err);
+        }
+      }
+
       return NextResponse.json(result);
     }
 
@@ -67,6 +89,7 @@ export async function POST(request: Request) {
       runId: started.runId,
       keywords: started.keywords,
       idea: started.idea,
+      actorId: started.actorId,
     });
   } catch (error) {
     console.error("[api/twitter-signals]", error);

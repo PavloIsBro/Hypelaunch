@@ -66,13 +66,69 @@ type TwitterStartResponse = {
   idea?: string;
   signals?: TwitterSignals;
   error?: string;
+  /** Present when server starts a narrow retry for empty first pass. */
+  retry?: boolean;
 };
 
 type TwitterPollResponse = {
   status?: "RUNNING" | "FAILED" | "READY";
   signals?: TwitterSignals;
   error?: string;
+  /** Server may ask client to continue polling a new runId (narrow retry). */
+  retryRunId?: string;
+  retryKeywords?: string[];
 };
+
+async function pollUntilDone(
+  runId: string,
+  keywords: string[],
+  idea: string,
+  signal: AbortSignal | undefined,
+  onUpdate: ((signals: TwitterSignals) => void) | undefined,
+  maxWaitMs: number,
+): Promise<TwitterSignals | null> {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < maxWaitMs) {
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+
+    await new Promise((r) => setTimeout(r, 2500));
+
+    const pollRes = await fetch("/api/twitter-signals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      signal,
+      body: JSON.stringify({ action: "poll", runId, keywords, idea }),
+    });
+
+    const pollData = await readJsonSafe<TwitterPollResponse>(pollRes);
+    if (!pollRes.ok) {
+      throw new Error(pollData?.error || `Twitter poll failed (${pollRes.status}).`);
+    }
+
+    // Server kicked off a narrower retry — switch to that run
+    if (pollData?.retryRunId) {
+      return pollUntilDone(
+        pollData.retryRunId,
+        pollData.retryKeywords ?? keywords.slice(0, 1),
+        idea,
+        signal,
+        onUpdate,
+        maxWaitMs - (Date.now() - startedAt),
+      );
+    }
+
+    if (pollData?.status === "READY" || pollData?.status === "FAILED") {
+      if (pollData.signals) onUpdate?.(pollData.signals);
+      return pollData.signals ?? null;
+    }
+  }
+
+  return null;
+}
 
 /** Start Apify scrape (fast) then poll until READY/FAILED or timeout. */
 export async function fetchTwitterSignalsLive(
@@ -104,34 +160,5 @@ export async function fetchTwitterSignalsLive(
     return null;
   }
 
-  const startedAt = Date.now();
-  const maxWaitMs = 90_000;
-
-  while (Date.now() - startedAt < maxWaitMs) {
-    if (signal?.aborted) {
-      throw new DOMException("Aborted", "AbortError");
-    }
-
-    await new Promise((r) => setTimeout(r, 2000));
-
-    const pollRes = await fetch("/api/twitter-signals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      signal,
-      body: JSON.stringify({ action: "poll", runId, keywords, idea }),
-    });
-
-    const pollData = await readJsonSafe<TwitterPollResponse>(pollRes);
-    if (!pollRes.ok) {
-      throw new Error(pollData?.error || `Twitter poll failed (${pollRes.status}).`);
-    }
-
-    if (pollData?.status === "READY" || pollData?.status === "FAILED") {
-      if (pollData.signals) onUpdate?.(pollData.signals);
-      return pollData.signals ?? null;
-    }
-  }
-
-  return null;
+  return pollUntilDone(runId, keywords, idea, signal, onUpdate, 120_000);
 }

@@ -27,6 +27,7 @@ export type TwitterScrapeStart = {
   datasetId?: string;
   keywords: string[];
   idea: string;
+  actorId: string;
 };
 
 const STOP_WORDS = new Set([
@@ -49,6 +50,14 @@ const STOP_WORDS = new Set([
   "at",
   "to",
   "of",
+  "by",
+  "as",
+  "is",
+  "are",
+  "be",
+  "my",
+  "our",
+  "your",
   "make",
   "meme",
   "memecoin",
@@ -65,76 +74,87 @@ const STOP_WORDS = new Set([
   "just",
   "very",
   "really",
+  "new",
+  "best",
+  "cool",
+  "super",
 ]);
 
-/** Fix common split brand names so Twitter search hits better. */
-function expandBrandAliases(words: string[]): string[] {
-  const joined = words.join(" ");
-  const aliases: string[] = [];
-
-  // sponge bob -> spongebob / SpongeBob
-  if (/\bsponge\b/.test(joined) && /\bbob\b/.test(joined)) {
-    aliases.push("SpongeBob", "spongebob", "sponge bob");
-  }
-  if (/\bpepe\b/.test(joined)) aliases.push("pepe", "Pepe", "$PEPE");
-  if (/\bdoge\b/.test(joined)) aliases.push("doge", "Doge", "$DOGE");
-  if (/\btrump\b/.test(joined)) aliases.push("Trump", "$TRUMP");
-
-  return aliases;
-}
-
+/**
+ * Build high-recall X search terms for ANY idea.
+ * Prefer short entity queries over long exact phrases (exact phrases often return 0).
+ */
 export function extractTwitterKeywords(idea: string): string[] {
   const trimmed = idea.trim();
   if (!trimmed) return [];
 
-  const words = trimmed
+  // Keep original order (important for adjacent bigrams / concatenations).
+  const ordered = trimmed
     .toLowerCase()
     .replace(/[^a-z0-9\s$#_-]/gi, " ")
     .split(/\s+/)
     .map((w) => w.trim())
     .filter((w) => w.length > 1 && !STOP_WORDS.has(w));
 
-  const unique = [...new Set(words)];
+  if (!ordered.length) {
+    // Last resort: first raw word(s)
+    const raw = trimmed
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/gi, " ")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2);
+    return raw.length ? [raw.join(" ")] : [];
+  }
+
   const terms: string[] = [];
 
-  // Broad brand / meme aliases first (best recall on X)
-  terms.push(...expandBrandAliases(unique));
+  // Cashtags / hashtags always first
+  for (const w of ordered) {
+    if (w.startsWith("$") || w.startsWith("#")) terms.push(w);
+  }
 
-  // Adjacent bigrams + concatenated forms: "sponge bob" + "spongebob"
-  for (let i = 0; i < unique.length - 1; i += 1) {
-    const a = unique[i];
-    const b = unique[i + 1];
+  // Subject / lead entity first (universal — not brand-specific)
+  const lead = ordered.find((w) => !w.startsWith("$") && !w.startsWith("#") && w.length >= 3);
+  if (lead) terms.push(lead);
+
+  // Adjacent pairs from original order: "foo bar" + "foobar"
+  for (let i = 0; i < ordered.length - 1; i += 1) {
+    const a = ordered[i];
+    const b = ordered[i + 1];
     if (a.length < 2 || b.length < 2) continue;
+    if (a.startsWith("$") || a.startsWith("#") || b.startsWith("$") || b.startsWith("#")) continue;
     terms.push(`${a} ${b}`);
-    if (a.length + b.length <= 18) {
-      terms.push(`${a}${b}`);
-    }
+    if (a.length + b.length <= 20) terms.push(`${a}${b}`);
   }
 
-  // Strong single tokens
-  for (const w of unique) {
-    if (w.startsWith("$") || w.startsWith("#") || w.length >= 4) {
-      terms.push(w);
-    }
+  // Other strong singles (longer usually more distinctive)
+  const singles = [...ordered]
+    .filter((w) => !w.startsWith("$") && !w.startsWith("#") && w !== lead)
+    .sort((a, b) => b.length - a.length || a.localeCompare(b));
+  for (const w of singles) {
+    if (w.length >= 4) terms.push(w);
   }
 
-  // Short topical combo (not the whole noisy sentence)
-  if (unique.length >= 2) {
-    terms.push(unique.slice(0, 3).join(" "));
-  }
-
-  // Dedupe case-insensitively, keep first casing
   const seen = new Set<string>();
   const out: string[] = [];
   for (const t of terms) {
-    const key = t.toLowerCase();
-    if (seen.has(key) || t.length < 2) continue;
+    const key = t.toLowerCase().trim();
+    if (!key || key.length < 2 || seen.has(key)) continue;
     seen.add(key);
     out.push(t);
-    if (out.length >= 5) break;
+    // Fewer sharper queries → better recall on X scrapers
+    if (out.length >= 3) break;
   }
 
   return out;
+}
+
+/** Narrow to the single best query for empty-result retry. */
+export function primarySearchTerm(keywords: string[], idea: string): string {
+  if (keywords[0]) return keywords[0];
+  const fallback = extractTwitterKeywords(idea);
+  return fallback[0] || idea.trim().split(/\s+/).slice(0, 2).join(" ");
 }
 
 function asNumber(value: unknown): number {
@@ -154,7 +174,6 @@ function pickText(item: Record<string, unknown>): string {
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) return c.trim();
   }
-  // Some actors nest the tweet
   const nested = item.tweet || item.data || item.legacy;
   if (nested && typeof nested === "object") {
     const n = nested as Record<string, unknown>;
@@ -268,32 +287,25 @@ export function getApifyToken(): string {
   return raw.trim().replace(/^["']|["']$/g, "");
 }
 
-function getActorId(): string {
-  // Lite actor stays under free monthly caps; full tweet-scraper often returns
-  // { noResults: true } once the free run limit is hit.
-  return (process.env.APIFY_TWITTER_ACTOR_ID || "apidojo~twitter-scraper-lite").trim();
+/** Prefer free-tier-friendly lite actor; allow override + failover list. */
+export function getActorCandidates(): string[] {
+  const override = (process.env.APIFY_TWITTER_ACTOR_ID || "").trim();
+  const defaults = ["apidojo~twitter-scraper-lite", "apidojo~tweet-scraper"];
+  return [...new Set([override, ...defaults].filter(Boolean))];
 }
 
 function getMaxItems(): number {
   return Math.min(
     25,
-    Math.max(5, Number.parseInt(process.env.APIFY_MAX_TWEETS || "10", 10) || 10),
+    Math.max(5, Number.parseInt(process.env.APIFY_MAX_TWEETS || "8", 10) || 8),
   );
 }
 
-/** Start Apify run asynchronously (does not wait for scrape). Avoids Vercel 504. */
-export async function startTwitterScrape(idea: string): Promise<TwitterScrapeStart | null> {
-  const trimmed = idea.trim();
-  const keywords = extractTwitterKeywords(trimmed);
-  if (!trimmed || !keywords.length) return null;
-
-  const token = getApifyToken();
-  if (!token) {
-    console.warn("[apify] APIFY_TOKEN missing in runtime env");
-    return null;
-  }
-
-  const actorId = getActorId();
+async function startActorRun(
+  actorId: string,
+  keywords: string[],
+  token: string,
+): Promise<{ runId: string; datasetId?: string }> {
   const maxItems = getMaxItems();
   const url = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?token=${encodeURIComponent(token)}`;
 
@@ -301,7 +313,6 @@ export async function startTwitterScrape(idea: string): Promise<TwitterScrapeSta
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      // Broader recall: no language lock (exact long phrases often return 0)
       searchTerms: keywords,
       maxItems,
       maxTweets: maxItems,
@@ -312,31 +323,78 @@ export async function startTwitterScrape(idea: string): Promise<TwitterScrapeSta
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error("[apify] start run failed", res.status, body.slice(0, 400));
-    throw new Error(`Apify start failed (${res.status}).`);
+    throw new Error(`Apify start failed (${res.status}) on ${actorId}: ${body.slice(0, 180)}`);
   }
 
   const payload = (await res.json()) as {
     data?: { id?: string; defaultDatasetId?: string };
   };
-
   const runId = payload.data?.id;
-  if (!runId) {
-    throw new Error("Apify did not return a run id.");
+  if (!runId) throw new Error(`Apify did not return a run id (${actorId}).`);
+
+  return { runId, datasetId: payload.data?.defaultDatasetId };
+}
+
+/** Start Apify run asynchronously (does not wait for scrape). Avoids Vercel 504. */
+export async function startTwitterScrape(
+  idea: string,
+  options?: { keywords?: string[]; actorId?: string },
+): Promise<TwitterScrapeStart | null> {
+  const trimmed = idea.trim();
+  const keywords = options?.keywords?.length
+    ? options.keywords
+    : extractTwitterKeywords(trimmed);
+  if (!trimmed || !keywords.length) return null;
+
+  const token = getApifyToken();
+  if (!token) {
+    console.warn("[apify] APIFY_TOKEN missing in runtime env");
+    return null;
   }
 
-  console.log("[apify] started run", { runId, keywords, maxItems });
+  const actors = options?.actorId ? [options.actorId] : getActorCandidates();
+  let lastError: Error | null = null;
 
-  return {
-    runId,
-    datasetId: payload.data?.defaultDatasetId,
-    keywords,
-    idea: trimmed,
-  };
+  for (const actorId of actors) {
+    try {
+      const started = await startActorRun(actorId, keywords, token);
+      console.log("[apify] started run", {
+        runId: started.runId,
+        actorId,
+        keywords,
+        maxItems: getMaxItems(),
+      });
+      return {
+        runId: started.runId,
+        datasetId: started.datasetId,
+        keywords,
+        idea: trimmed,
+        actorId,
+      };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn("[apify] actor start failed, trying next", actorId, lastError.message);
+    }
+  }
+
+  throw lastError || new Error("Could not start any Apify Twitter actor.");
 }
 
 export type TwitterScrapePoll =
   | { status: "RUNNING" | "READY" | "FAILED"; signals?: TwitterSignals; error?: string };
+
+function isNoResultsOnly(rawList: unknown[]): boolean {
+  return (
+    rawList.length > 0 &&
+    rawList.every(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        "noResults" in (row as object) &&
+        Object.keys(row as object).length <= 2,
+    )
+  );
+}
 
 /** Poll Apify run status and return signals when SUCCEEDED. */
 export async function pollTwitterScrape(
@@ -411,33 +469,20 @@ export async function pollTwitterScrape(
 
   const items = (await itemsRes.json()) as unknown;
   const rawList = Array.isArray(items) ? items : [];
-  const noResultOnly =
-    rawList.length > 0 &&
-    rawList.every(
-      (row) =>
-        row &&
-        typeof row === "object" &&
-        "noResults" in (row as object) &&
-        Object.keys(row as object).length <= 2,
-    );
+  const noResultOnly = isNoResultsOnly(rawList);
   const tweets = normalizeTweets(rawList);
 
   if (!tweets.length) {
     console.warn("[apify] empty tweets after normalize", {
       rawCount: rawList.length,
       noResultOnly,
-      actorId: getActorId(),
-      sampleKeys:
-        rawList[0] && typeof rawList[0] === "object"
-          ? Object.keys(rawList[0] as object).slice(0, 20)
-          : [],
       keywords,
     });
     const reason = noResultOnly
-      ? "Apify actor hit its free monthly run limit (or blocked search). Switch APIFY_TWITTER_ACTOR_ID to apidojo~twitter-scraper-lite, or upgrade the Apify plan, then Redeploy."
+      ? "Apify returned noResults (actor free limit or blocked search). Retrying with a sharper query if possible."
       : rawList.length
-        ? `Apify returned ${rawList.length} items but no readable tweet text. Try again.`
-        : `No tweets found for: ${keywords.slice(0, 3).join(" · ")}. Try a more popular meme name.`;
+        ? `Apify returned ${rawList.length} items but no readable tweet text.`
+        : `No tweets for: ${keywords.slice(0, 3).join(" · ")}.`;
     return {
       status: "READY",
       signals: buildFallbackSignals(idea, reason),
@@ -448,6 +493,25 @@ export async function pollTwitterScrape(
     status: "READY",
     signals: buildSignalsFromTweets(keywords, tweets),
   };
+}
+
+/**
+ * If first scrape is empty, start one narrower retry (single best keyword).
+ * Universal recovery for any idea — not brand-specific.
+ */
+export async function maybeStartNarrowRetry(
+  idea: string,
+  keywords: string[],
+  signals: TwitterSignals | undefined,
+): Promise<TwitterScrapeStart | null> {
+  if (!signals || signals.tweetCount > 0) return null;
+
+  const primary = primarySearchTerm(keywords, idea);
+  // Avoid infinite loops: only retry when we had multiple terms or a long phrase
+  if (keywords.length <= 1 && primary === keywords[0]) return null;
+
+  console.log("[apify] narrow retry", { primary, from: keywords });
+  return startTwitterScrape(idea, { keywords: [primary] });
 }
 
 /** Compact block for the LLM user message. */

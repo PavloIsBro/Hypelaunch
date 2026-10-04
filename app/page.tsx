@@ -75,10 +75,13 @@ export default function HomePage() {
   const [selectedPaid, setSelectedPaid] = useState<PaidPlan | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [generateNotice, setGenerateNotice] = useState<string | null>(null);
+  const [twitterPending, setTwitterPending] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
   const generateBusyRef = useRef(false);
   const generateRequestIdRef = useRef(0);
   const generateAbortRef = useRef<AbortController | null>(null);
+  /** Hold scrape result so it is never lost if it arrives before the kit. */
+  const pendingTwitterRef = useRef<LaunchKitFull["twitterSignals"] | null>(null);
 
   useEffect(() => {
     return () => {
@@ -110,6 +113,8 @@ export default function HomePage() {
 
       setLoading(true);
       setFullResult(null);
+      pendingTwitterRef.current = null;
+      setTwitterPending(true);
       if (!preserveUnlock) {
         setUnlocked(null);
         setPurchasedAddons(EMPTY_ADDONS);
@@ -123,11 +128,20 @@ export default function HomePage() {
       try {
         // Start Twitter scrape in parallel (async Apify run + client poll).
         // Do NOT await scrape inside /api/generate — that caused Vercel 504.
-        const twitterPromise = fetchTwitterSignalsLive(trimmed, controller.signal, (signals) => {
+        const applyTwitter = (signals: NonNullable<LaunchKitFull["twitterSignals"]>) => {
           if (requestId !== generateRequestIdRef.current) return;
+          pendingTwitterRef.current = signals;
+          setTwitterPending(false);
           setFullResult((prev) => (prev ? { ...prev, twitterSignals: signals } : prev));
-        }).catch((err) => {
+        };
+
+        const twitterPromise = fetchTwitterSignalsLive(
+          trimmed,
+          controller.signal,
+          applyTwitter,
+        ).catch((err) => {
           console.error("Twitter scrape failed", err);
+          if (requestId === generateRequestIdRef.current) setTwitterPending(false);
           return null;
         });
 
@@ -142,7 +156,11 @@ export default function HomePage() {
 
         if (requestId !== generateRequestIdRef.current) return;
 
-        setFullResult(data.kit);
+        // Merge any scrape that finished before the kit arrived.
+        setFullResult({
+          ...data.kit,
+          twitterSignals: pendingTwitterRef.current ?? data.kit.twitterSignals,
+        });
         if (preserveUnlock) {
           setUnlocked("pro");
         }
@@ -161,8 +179,9 @@ export default function HomePage() {
 
         // Merge live Twitter when scrape finishes (may arrive after kit).
         void twitterPromise.then((signals) => {
-          if (requestId !== generateRequestIdRef.current || !signals) return;
-          setFullResult((prev) => (prev ? { ...prev, twitterSignals: signals } : prev));
+          if (requestId !== generateRequestIdRef.current) return;
+          if (signals) applyTwitter(signals);
+          else setTwitterPending(false);
         });
       } catch (err) {
         if (requestId !== generateRequestIdRef.current) return;
@@ -308,6 +327,13 @@ export default function HomePage() {
                 signals={fullResult.twitterSignals}
                 className="animate-fade-up"
               />
+            ) : twitterPending ? (
+              <section className="animate-fade-up rounded-2xl border border-cyan-400/20 bg-[#0a0a0a]/95 p-5 sm:p-6">
+                <h2 className="text-sm font-semibold text-white">X / Twitter live parse</h2>
+                <p className="mt-2 text-sm text-zinc-400">
+                  Scanning X for attention signals… this can take up to a minute.
+                </p>
+              </section>
             ) : null}
 
             <ScoreInsights
