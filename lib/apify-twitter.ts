@@ -44,6 +44,11 @@ const STOP_WORDS = new Set([
   "into",
   "over",
   "under",
+  "on",
+  "in",
+  "at",
+  "to",
+  "of",
   "make",
   "meme",
   "memecoin",
@@ -62,6 +67,22 @@ const STOP_WORDS = new Set([
   "really",
 ]);
 
+/** Fix common split brand names so Twitter search hits better. */
+function expandBrandAliases(words: string[]): string[] {
+  const joined = words.join(" ");
+  const aliases: string[] = [];
+
+  // sponge bob -> spongebob / SpongeBob
+  if (/\bsponge\b/.test(joined) && /\bbob\b/.test(joined)) {
+    aliases.push("SpongeBob", "spongebob", "sponge bob");
+  }
+  if (/\bpepe\b/.test(joined)) aliases.push("pepe", "Pepe", "$PEPE");
+  if (/\bdoge\b/.test(joined)) aliases.push("doge", "Doge", "$DOGE");
+  if (/\btrump\b/.test(joined)) aliases.push("Trump", "$TRUMP");
+
+  return aliases;
+}
+
 export function extractTwitterKeywords(idea: string): string[] {
   const trimmed = idea.trim();
   if (!trimmed) return [];
@@ -71,29 +92,49 @@ export function extractTwitterKeywords(idea: string): string[] {
     .replace(/[^a-z0-9\s$#_-]/gi, " ")
     .split(/\s+/)
     .map((w) => w.trim())
-    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+    .filter((w) => w.length > 1 && !STOP_WORDS.has(w));
 
-  const unique = [...new Set(words)].slice(0, 6);
+  const unique = [...new Set(words)];
   const terms: string[] = [];
 
-  if (trimmed.length <= 80) {
-    terms.push(trimmed);
-  } else if (unique.length >= 2) {
-    terms.push(unique.slice(0, 4).join(" "));
+  // Broad brand / meme aliases first (best recall on X)
+  terms.push(...expandBrandAliases(unique));
+
+  // Adjacent bigrams + concatenated forms: "sponge bob" + "spongebob"
+  for (let i = 0; i < unique.length - 1; i += 1) {
+    const a = unique[i];
+    const b = unique[i + 1];
+    if (a.length < 2 || b.length < 2) continue;
+    terms.push(`${a} ${b}`);
+    if (a.length + b.length <= 18) {
+      terms.push(`${a}${b}`);
+    }
   }
 
-  if (unique.length) {
+  // Strong single tokens
+  for (const w of unique) {
+    if (w.startsWith("$") || w.startsWith("#") || w.length >= 4) {
+      terms.push(w);
+    }
+  }
+
+  // Short topical combo (not the whole noisy sentence)
+  if (unique.length >= 2) {
     terms.push(unique.slice(0, 3).join(" "));
   }
 
-  for (const w of unique) {
-    if (w.startsWith("$") || w.startsWith("#") || w.length >= 5) {
-      terms.push(w);
-    }
-    if (terms.length >= 3) break;
+  // Dedupe case-insensitively, keep first casing
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of terms) {
+    const key = t.toLowerCase();
+    if (seen.has(key) || t.length < 2) continue;
+    seen.add(key);
+    out.push(t);
+    if (out.length >= 5) break;
   }
 
-  return [...new Set(terms)].slice(0, 3);
+  return out;
 }
 
 function asNumber(value: unknown): number {
@@ -108,9 +149,18 @@ function pickText(item: Record<string, unknown>): string {
     item.text,
     item.content,
     item.tweetText,
+    item.body,
   ];
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) return c.trim();
+  }
+  // Some actors nest the tweet
+  const nested = item.tweet || item.data || item.legacy;
+  if (nested && typeof nested === "object") {
+    const n = nested as Record<string, unknown>;
+    for (const c of [n.full_text, n.fullText, n.text, n.content]) {
+      if (typeof c === "string" && c.trim()) return c.trim();
+    }
   }
   return "";
 }
@@ -248,11 +298,11 @@ export async function startTwitterScrape(idea: string): Promise<TwitterScrapeSta
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      // Broader recall: Top + no language lock (exact long phrases often return 0)
       searchTerms: keywords,
       maxItems,
-      maxTweets: maxItems,
-      sort: "Latest",
-      tweetLanguage: "en",
+      sort: "Top",
+      includeSearchTerms: true,
     }),
   });
 
@@ -356,14 +406,25 @@ export async function pollTwitterScrape(
   }
 
   const items = (await itemsRes.json()) as unknown;
-  const tweets = normalizeTweets(Array.isArray(items) ? items : []);
+  const rawList = Array.isArray(items) ? items : [];
+  const tweets = normalizeTweets(rawList);
 
   if (!tweets.length) {
+    console.warn("[apify] empty tweets after normalize", {
+      rawCount: rawList.length,
+      sampleKeys:
+        rawList[0] && typeof rawList[0] === "object"
+          ? Object.keys(rawList[0] as object).slice(0, 20)
+          : [],
+      keywords,
+    });
     return {
       status: "READY",
       signals: buildFallbackSignals(
         idea,
-        "Apify returned no tweets for these keywords — try a sharper idea.",
+        rawList.length
+          ? `Apify returned ${rawList.length} items but no readable tweet text. Try again.`
+          : `No tweets found for: ${keywords.slice(0, 3).join(" · ")}. Try a more popular meme name.`,
       ),
     };
   }
