@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import type { PurchasedAddons } from "@/lib/addons";
+import {
+  formatTwitterSignalsForPrompt,
+  type TwitterSignals,
+} from "@/lib/apify-twitter";
 import { generateMockLaunchKit } from "@/lib/mock";
 import { aiLaunchKitSchema, type AiLaunchKitPayload } from "@/lib/launch-kit-schema";
 import { mapLandingPageFields } from "@/lib/landing-page";
@@ -13,7 +17,11 @@ function normalizeTicker(raw: string): string {
   return cleaned.slice(0, 5);
 }
 
-export function mapAiPayloadToLaunchKit(idea: string, data: AiLaunchKitPayload): LaunchKitFull {
+export function mapAiPayloadToLaunchKit(
+  idea: string,
+  data: AiLaunchKitPayload,
+  twitterSignals?: TwitterSignals,
+): LaunchKitFull {
   const ticker = normalizeTicker(data.ticker);
 
   return {
@@ -40,6 +48,7 @@ export function mapAiPayloadToLaunchKit(idea: string, data: AiLaunchKitPayload):
         launchReadinessScore: item.launchReadinessScore,
       }))
       .filter((item) => item.prompt.length > 0),
+    twitterSignals,
     landingPage: mapLandingPageFields(
       data.tokenName.trim(),
       ticker,
@@ -76,21 +85,22 @@ Competitor rules:
 - Compare only against recent Pump.fun / micro-cap / new meme launches with similar narratives.
 - Reference similar CT attention patterns, bonding-curve velocity, narrative saturation.
 - DO NOT list DOGE, SHIBA, or PEPE as direct competitors. You may mention them only as distant historical context if absolutely necessary.
-- Invent plausible recent-style examples (e.g. "$FROG meta", "AI animal runner", "politics frog derivative") — these are AI-estimated placeholders.
+- Prefer evidence from the LIVE X/TWITTER SIGNAL block when provided. Only invent lookalike tickers if live samples are missing.
 
 Field rules:
 - ticker: 3-5 uppercase letters only
 - narrativeSummary: ONE line max (under 160 chars), hook-first
-- interestScore / launchReadinessScore: 0-100 with realistic spread; reasoning must justify numbers from narrative fit, saturation, and packaging clarity
+- interestScore / launchReadinessScore: 0-100 with realistic spread; when live Twitter attention_score is provided, keep interestScore within about ±18 of that score unless packaging clarity strongly overrides
 - launchReadinessScore = clarity + packaging + timing readiness — NOT price prediction
+- interestReasoning must cite live tweet volume / engagement when signals are present
 - pumpFunNarrativeAnalysis: how this idea fits current Pump.fun meta, attention velocity, narrative shelf-life
 - competitorMemecoinAnalysis: 2-4 recent-style lookalike launches, how they positioned | saturated
-- marketSaturation: how crowded this narrative bucket is right now on Pump.fun / CT
-- similarRecentNarratives: recent parallel narratives that competed for the same attention
-- launchTimingSignal: enter now / wait / avoid — with CT-style timing rationale
+- marketSaturation: how crowded this narrative bucket is right now on Pump.fun / CT — use live tweet density when available
+- similarRecentNarratives: recent parallel narratives that competed for the same attention — prefer angles visible in sample tweets
+- launchTimingSignal: enter now / wait / avoid — with CT-style timing rationale grounded in live attention when possible
 - riskNotes: concrete launch risks (saturation, confusion, copycats, weak hook)
 - recommendedPositioning: how to differentiate in one tight positioning frame
-- trendRecommendations: exactly 3 alternate READY PROMPTS that remix the user's idea against CURRENT X/Twitter hot narratives (war, politics, viral animals, celebs, sports, AI drama, etc.). Each item is ONLY: prompt (1 short ready-to-paste idea sentence), interestScore (0-100), launchReadinessScore (0-100). NO explanations, NO "because", NO trend names in a separate field — the prompt itself must already be the sharper angle. Example: user says "dog memecoin" → prompt like "Patron the demining hero dog who saves lives under fire" with higher projected scores than a generic dog. Scores must be comparable to the main idea and usually stronger when the trend angle is sharper.
+- trendRecommendations: exactly 3 alternate READY PROMPTS that remix the user's idea against CURRENT X/Twitter hot narratives visible in the live signal (or general CT metas if signal is empty). Each item is ONLY: prompt (1 short ready-to-paste idea sentence), interestScore (0-100), launchReadinessScore (0-100). NO explanations, NO "because", NO trend names in a separate field — the prompt itself must already be the sharper angle. Example: user says "dog memecoin" → prompt like "Patron the demining hero dog who saves lives under fire" with higher projected scores than a generic dog. Scores must be comparable to the main idea and usually stronger when the trend angle is sharper.
 - landingPage: structured JSON for a React landing template (NOT HTML). Fields: tagline, shortNarrative, audience, colorPalette (hex primary/secondary/accent/background — dark crypto-native), heroTitle, heroSubtitle, aboutSection, communitySection, ctaText, pumpFunButtonLabel (e.g. "Trade on Pump.fun"), xLinkLabel, telegramLinkLabel. Memecoin voice; no corporate tone.
 - launchExecutionLayer: Launch-tier ops checklist (Pump.fun deploy window, liquidity timing, CT coordination beats) — no tweet drafts
 - Do NOT generate tweets, Telegram Q&A, or social post examples
@@ -104,6 +114,7 @@ export async function generateLaunchKitWithOpenAI(
   idea: string,
   plan: PlanId = "free",
   addons: PurchasedAddons = { x: false, telegram: false },
+  twitterSignals?: TwitterSignals,
 ): Promise<{ kit: LaunchKitFull; source: "openai" | "fallback" }> {
   const trimmed = idea.trim();
   if (!trimmed) {
@@ -113,12 +124,18 @@ export async function generateLaunchKitWithOpenAI(
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     console.warn("[api/generate] OPENAI_API_KEY missing — using fallback mock.");
-    return { kit: generateMockLaunchKit(trimmed), source: "fallback" };
+    return {
+      kit: { ...generateMockLaunchKit(trimmed), twitterSignals },
+      source: "fallback",
+    };
   }
 
   console.log("[api/generate] calling OpenAI…");
 
   const openai = new OpenAI({ apiKey });
+  const signalBlock = twitterSignals
+    ? `\n\n${formatTwitterSignalsForPrompt(twitterSignals)}`
+    : "\n\nLIVE X/TWITTER SIGNAL: unavailable — estimate from general CT knowledge.";
 
   try {
     const completion = await openai.beta.chat.completions.parse({
@@ -128,7 +145,7 @@ export async function generateLaunchKitWithOpenAI(
         { role: "system", content: buildSystemPrompt(plan, addons) },
         {
           role: "user",
-          content: `Memecoin idea: "${trimmed}"\n\nGenerate the full market intelligence report.`,
+          content: `Memecoin idea: "${trimmed}"\n\nGenerate the full market intelligence report.${signalBlock}`,
         },
       ],
       response_format: zodResponseFormat(aiLaunchKitSchema, "launch_intelligence"),
@@ -140,11 +157,14 @@ export async function generateLaunchKitWithOpenAI(
     }
 
     return {
-      kit: mapAiPayloadToLaunchKit(trimmed, parsed),
+      kit: mapAiPayloadToLaunchKit(trimmed, parsed, twitterSignals),
       source: "openai",
     };
   } catch (error) {
     console.error("[generate] OpenAI error:", error);
-    return { kit: generateMockLaunchKit(trimmed), source: "fallback" };
+    return {
+      kit: { ...generateMockLaunchKit(trimmed), twitterSignals },
+      source: "fallback",
+    };
   }
 }

@@ -13,6 +13,7 @@ import { PaymentUnlock } from "@/components/PaymentUnlock";
 import { PricingCards } from "@/components/PricingCards";
 import { ResultTierBadge } from "@/components/ResultTierBadge";
 import { TrendRecommendations } from "@/components/TrendRecommendations";
+import { TwitterSignalsPanel } from "@/components/TwitterSignalsPanel";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
 import { ScoreInsights } from "@/components/ScoreInsights";
 import { ScoreRing } from "@/components/ScoreRing";
@@ -175,7 +176,7 @@ export default function HomePage() {
   return (
     <>
       <Background paused={loading} />
-      {loading ? <LoadingOverlay message="Building your launch kit…" /> : null}
+      {loading ? <LoadingOverlay message="Parsing X + building your launch kit…" /> : null}
 
       <div
         className={[
@@ -285,6 +286,13 @@ export default function HomePage() {
                 className="animate-fade-up stagger-2"
               />
             </div>
+
+            {fullResult.twitterSignals ? (
+              <TwitterSignalsPanel
+                signals={fullResult.twitterSignals}
+                className="animate-fade-up"
+              />
+            ) : null}
 
             <ScoreInsights
               interestReasoning={fullResult.interestReasoning}
