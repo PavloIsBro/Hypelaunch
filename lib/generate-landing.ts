@@ -1,5 +1,4 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { generateStructured, getAiProvider, isAiConfigured, type AiSource } from "@/lib/ai";
 import { getLandingFallback } from "@/lib/templates/registry";
 import {
   mapNeonCurveContent,
@@ -10,7 +9,7 @@ import type { LandingTemplateId } from "@/lib/templates/types";
 
 export type GenerateLandingResult = {
   content: NeonCurveContent;
-  source: "openai" | "fallback";
+  source: AiSource;
   message?: string;
 };
 
@@ -50,18 +49,15 @@ async function generateNeonCurveLanding(
   const fallbackMessage =
     "AI landing copy is temporarily unavailable. Showing a default Neon Curve preview.";
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    console.warn("[api/generate-landing] OPENAI_API_KEY missing — using fallback.");
+  if (!isAiConfigured()) {
+    console.warn(
+      `[api/generate-landing] ${getAiProvider()} API key missing — using fallback.`,
+    );
     return { content: fallback, source: "fallback", message: fallbackMessage };
   }
 
-  const openai = new OpenAI({ apiKey });
-
   try {
-    const completion = await openai.beta.chat.completions.parse({
-      model: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
-      temperature: 0.85,
+    const { data, provider } = await generateStructured({
       messages: [
         { role: "system", content: buildNeonCurveSystemPrompt(tokenName, ticker) },
         {
@@ -69,20 +65,17 @@ async function generateNeonCurveLanding(
           content: `Memecoin idea: "${idea}"\n\nGenerate Neon Curve landing JSON for ${tokenName} ($${ticker}).`,
         },
       ],
-      response_format: zodResponseFormat(neonCurveAiSchema, "neon_curve_landing"),
+      schema: neonCurveAiSchema,
+      schemaName: "neon_curve_landing",
+      temperature: 0.85,
     });
 
-    const parsed = completion.choices[0]?.message?.parsed;
-    if (!parsed) {
-      throw new Error("Empty model response");
-    }
-
     return {
-      content: mapNeonCurveContent(tokenName, ticker, parsed),
-      source: "openai",
+      content: mapNeonCurveContent(tokenName, ticker, data),
+      source: provider,
     };
   } catch (error) {
-    console.error("[generate-landing] OpenAI error:", error);
+    console.error("[generate-landing] AI error:", error);
     return { content: fallback, source: "fallback", message: fallbackMessage };
   }
 }

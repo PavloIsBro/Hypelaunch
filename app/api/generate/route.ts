@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
-import { generateLaunchKitWithOpenAI } from "@/lib/generate-launch-kit";
+import { generateLaunchKit } from "@/lib/generate-launch-kit";
 import type { PlanId } from "@/lib/plans";
 
 export const runtime = "nodejs";
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     const plan = parsePlan(body.selectedPlan ?? body.plan);
     const addons = parseAddons(body.automationAddons ?? body.addons ?? EMPTY_ADDONS);
 
-    const { kit, source } = await generateLaunchKitWithOpenAI(idea, plan, addons);
+    const { kit, source } = await generateLaunchKit(idea, plan, addons);
 
     console.log("[api/generate] success", { source, ticker: kit.ticker });
 

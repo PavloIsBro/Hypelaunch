@@ -10,7 +10,7 @@ export type GenerateRequestPayload = {
 
 export type GenerateApiResponse = {
   kit: LaunchKitFull;
-  source?: "openai" | "fallback";
+  source?: "openai" | "gemini" | "fallback";
   message?: string;
   error?: string;
 };

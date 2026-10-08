@@ -10,7 +10,7 @@ export type GenerateLandingRequestPayload = {
 
 export type GenerateLandingApiResponse = {
   content: LandingTemplateContent;
-  source?: "openai" | "fallback";
+  source?: "openai" | "gemini" | "fallback";
   message?: string;
   error?: string;
 };

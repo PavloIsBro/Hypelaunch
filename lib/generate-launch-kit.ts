@@ -1,5 +1,4 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { generateStructured, getAiProvider, isAiConfigured, type AiSource } from "@/lib/ai";
 import type { PurchasedAddons } from "@/lib/addons";
 import { generateMockLaunchKit } from "@/lib/mock";
 import { aiLaunchKitSchema, type AiLaunchKitPayload } from "@/lib/launch-kit-schema";
@@ -85,30 +84,27 @@ ${addonNotes.length ? `- ${addonNotes.join("\n- ")}` : ""}
 Return JSON matching the schema exactly.`;
 }
 
-export async function generateLaunchKitWithOpenAI(
+export async function generateLaunchKit(
   idea: string,
   plan: PlanId = "free",
   addons: PurchasedAddons = { x: false, telegram: false },
-): Promise<{ kit: LaunchKitFull; source: "openai" | "fallback" }> {
+): Promise<{ kit: LaunchKitFull; source: AiSource }> {
   const trimmed = idea.trim();
   if (!trimmed) {
     throw new Error("Memecoin idea is required.");
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    console.warn("[api/generate] OPENAI_API_KEY missing — using fallback mock.");
+  if (!isAiConfigured()) {
+    console.warn(
+      `[api/generate] ${getAiProvider()} API key missing — using fallback mock.`,
+    );
     return { kit: generateMockLaunchKit(trimmed), source: "fallback" };
   }
 
-  console.log("[api/generate] calling OpenAI…");
-
-  const openai = new OpenAI({ apiKey });
+  console.log(`[api/generate] calling ${getAiProvider()}…`);
 
   try {
-    const completion = await openai.beta.chat.completions.parse({
-      model: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
-      temperature: 0.75,
+    const { data, provider } = await generateStructured({
       messages: [
         { role: "system", content: buildSystemPrompt(plan, addons) },
         {
@@ -116,20 +112,17 @@ export async function generateLaunchKitWithOpenAI(
           content: `Memecoin idea: "${trimmed}"\n\nGenerate the full market intelligence report.`,
         },
       ],
-      response_format: zodResponseFormat(aiLaunchKitSchema, "launch_intelligence"),
+      schema: aiLaunchKitSchema,
+      schemaName: "launch_intelligence",
+      temperature: 0.75,
     });
 
-    const parsed = completion.choices[0]?.message?.parsed;
-    if (!parsed) {
-      throw new Error("Empty model response");
-    }
-
     return {
-      kit: mapAiPayloadToLaunchKit(trimmed, parsed),
-      source: "openai",
+      kit: mapAiPayloadToLaunchKit(trimmed, data),
+      source: provider,
     };
   } catch (error) {
-    console.error("[generate] OpenAI error:", error);
+    console.error("[generate] AI error:", error);
     return { kit: generateMockLaunchKit(trimmed), source: "fallback" };
   }
 }
