@@ -3,7 +3,6 @@ import { zodResponseFormat } from "openai/helpers/zod";
 import type { PurchasedAddons } from "@/lib/addons";
 import { generateMockLaunchKit } from "@/lib/mock";
 import { aiLaunchKitSchema, type AiLaunchKitPayload } from "@/lib/launch-kit-schema";
-import { mapLandingPageFields } from "@/lib/landing-page";
 import type { LaunchKitFull } from "@/lib/types";
 import type { PlanId } from "@/lib/plans";
 
@@ -32,11 +31,6 @@ export function mapAiPayloadToLaunchKit(idea: string, data: AiLaunchKitPayload):
     launchTimingSignal: data.launchTimingSignal.trim(),
     riskNotes: data.riskNotes.trim(),
     recommendedPositioning: data.recommendedPositioning.trim(),
-    landingPage: mapLandingPageFields(
-      data.tokenName.trim(),
-      ticker,
-      data.landingPage,
-    ),
     launchExecutionLayer: data.launchExecutionLayer.trim(),
     automation: {
       xPosting: data.automation.xPosting.trim(),
@@ -82,7 +76,7 @@ Field rules:
 - launchTimingSignal: enter now / wait / avoid — with CT-style timing rationale
 - riskNotes: concrete launch risks (saturation, confusion, copycats, weak hook)
 - recommendedPositioning: how to differentiate in one tight positioning frame
-- landingPage: structured JSON for a React landing template (NOT HTML). Fields: tagline, shortNarrative, audience, colorPalette (hex primary/secondary/accent/background — dark crypto-native), heroTitle, heroSubtitle, aboutSection, communitySection, ctaText, pumpFunButtonLabel (e.g. "Trade on Pump.fun"), xLinkLabel, telegramLinkLabel. Memecoin voice; no corporate tone.
+- Do NOT generate landing page copy (landing is generated separately after Extra unlock)
 - launchExecutionLayer: Extra-tier launch ops checklist (Pump.fun deploy window, liquidity timing, CT coordination beats) — no tweet drafts
 - Do NOT generate tweets, Telegram Q&A, or social post examples
 - plan context: ${plan} (still output full JSON)

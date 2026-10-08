@@ -1,5 +1,6 @@
 import { getLandingTemplateComponent } from "@/lib/template-components";
-import { getLandingTemplateMeta } from "@/lib/templates";
+import { getLandingFallback, getLandingTemplateMeta } from "@/lib/templates";
+import { isLandingTemplateId } from "@/lib/templates/types";
 import { Syne } from "next/font/google";
 import { notFound } from "next/navigation";
 
@@ -15,13 +16,17 @@ type TemplatePageProps = {
 
 export default async function TemplatePage({ params }: TemplatePageProps) {
   const { slug } = await params;
+  if (!isLandingTemplateId(slug)) notFound();
+
   const meta = getLandingTemplateMeta(slug);
   const Component = getLandingTemplateComponent(slug);
   if (!meta || !Component) notFound();
 
+  const content = getLandingFallback(slug, "FROTH", "FROTH");
+
   return (
     <div className={syne.variable}>
-      <Component />
+      <Component content={content} />
     </div>
   );
 }

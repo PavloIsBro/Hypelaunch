@@ -1,5 +1,3 @@
-import type { LandingPageContent } from "./landing-page";
-
 export type { LandingColorPalette, LandingPageContent } from "./landing-page";
 
 /** Full intelligence report (generated once per idea); UI reveals by unlock tier. */
@@ -19,7 +17,7 @@ export type LaunchKitFull = {
   launchTimingSignal: string;
   riskNotes: string;
   recommendedPositioning: string;
-  landingPage: LandingPageContent;
+  /** Landing copy is generated separately after Extra unlock. */
   launchExecutionLayer: string;
   automation: {
     xPosting: string;

@@ -1,4 +1,3 @@
-import { mapLandingPageFields } from "./landing-page";
 import type { LaunchKitFull } from "./types";
 
 function hashString(value: string): number {
@@ -131,63 +130,6 @@ export function generateMockLaunchKit(idea: string): LaunchKitFull {
       ],
       seed + 8,
     ),
-    landingPage: mapLandingPageFields(tokenName, ticker, {
-      tagline: pick(
-        [
-          `The ${base} meta — bonding-curve native`,
-          `$${ticker} · culture coin for CT speed`,
-          `Pump.fun energy. ${base} narrative.`,
-        ],
-        seed + 9,
-      ),
-      shortNarrative: narrativeSummary,
-      audience: pick(
-        [
-          "CT degens, Pump.fun snipers, and meme-native traders chasing narrative velocity.",
-          "Late-night timeline lurkers and bonding-curve chasers who move on visuals first.",
-          "Solana meme traders rotating through micro-cap culture coins on Pump.fun.",
-        ],
-        seed + 10,
-      ),
-      colorPalette: {
-        primary: pick(["#8b5cf6", "#7c3aed", "#6366f1"], seed),
-        secondary: pick(["#22d3ee", "#06b6d4", "#38bdf8"], seed + 1),
-        accent: pick(["#a78bfa", "#c084fc", "#818cf8"], seed + 2),
-        background: "#050508",
-      },
-      heroTitle: pick(
-        [`${tokenName} is live on the timeline`, `Meet $${ticker}`, `${base} — send or fade`],
-        seed + 11,
-      ),
-      heroSubtitle: pick(
-        [
-          "Culture-first memecoin built for Pump.fun speed and CT attention cycles.",
-          "One narrative. One ticker. Bonding-curve momentum as the product.",
-          "Meme-native launch packaging for traders who read the meta before the chart.",
-        ],
-        seed + 12,
-      ),
-      aboutSection: pick(
-        [
-          `${tokenName} ($${ticker}) packages "${trimmed.slice(0, 80)}" as a Pump.fun-style culture play — no utility promises, pure narrative velocity and community coordination.`,
-          `Built around the ${base} angle: ironic, quotable, and optimized for fast CT recall. This is a memecoin launch surface, not a SaaS product.`,
-          `$${ticker} exists to ride a timely meta bucket on Pump.fun. Holders coordinate on X and TG; attention is the liquidity driver.`,
-        ],
-        seed + 13,
-      ),
-      communitySection: pick(
-        [
-          "Join the CT reply-graph, raid windows, and TG coordination beats. Community momentum drives the narrative — not roadmap slides.",
-          "X for narrative beats and meme drops. Telegram for launch ops, timing alerts, and holder coordination.",
-          "Culture coin community: timeline-first, meme-forward, built for bonding-curve traders who move fast.",
-        ],
-        seed + 14,
-      ),
-      ctaText: pick(["Join the drop", "Enter the meta", "Ride the narrative"], seed + 15),
-      pumpFunButtonLabel: "Trade on Pump.fun",
-      xLinkLabel: "Follow on X",
-      telegramLinkLabel: "Join Telegram",
-    }),
     launchExecutionLayer: pick(
       [
         `T-2h: finalize meme pack + ticker spam list. T0: Pump.fun deploy + pin CT thread. T+30m: bonding-curve watch + reply raids. T+2h: liquidity/TG coordination check. T+24h: narrative recap or pivot signal.`,

@@ -7,7 +7,7 @@ import { Background } from "@/components/Background";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
 import { KitBasics } from "@/components/KitBasics";
-import { LandingPreview } from "@/components/LandingPreview";
+import { LandingExtraPreview } from "@/components/LandingExtraPreview";
 import { LaunchExecutionPreview } from "@/components/LaunchExecutionPreview";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PaymentUnlock } from "@/components/PaymentUnlock";
@@ -282,8 +282,10 @@ export default function HomePage() {
 
             {showExtraContent ? (
               <>
-                <LandingPreview
-                  landing={fullResult.landingPage}
+                <LandingExtraPreview
+                  idea={fullResult.idea}
+                  tokenName={fullResult.tokenName}
+                  ticker={fullResult.ticker}
                   className="animate-fade-up stagger-5"
                 />
                 <LaunchExecutionPreview

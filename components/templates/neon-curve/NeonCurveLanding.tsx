@@ -12,21 +12,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { NeonCurveContent } from "@/lib/templates/neon-curve/schema";
 import { Flame, Radio, Rocket, Sparkles, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import "./neon-curve.css";
 
-const MARQUEE = [
-  "$FROTH",
-  "BONDING LIVE",
-  "NO UTILITY — ONLY VIBES",
-  "CT RAID INCOMING",
-  "FOAM AT THE TOP",
-  "APE RESPONSIBLY*",
-  "*jk don't",
-];
+export type NeonCurveLandingProps = {
+  content: NeonCurveContent;
+};
 
-export function NeonCurveLanding() {
+export function NeonCurveLanding({ content }: NeonCurveLandingProps) {
   const [curveFill, setCurveFill] = useState(38);
   const [degen, setDegen] = useState(71);
 
@@ -37,6 +32,10 @@ export function NeonCurveLanding() {
     }, 1800);
     return () => window.clearInterval(id);
   }, []);
+
+  const marquee = content.marquee.length
+    ? content.marquee
+    : [`$${content.ticker}`, "BONDING LIVE"];
 
   return (
     <div className="neon-curve relative min-h-screen overflow-x-hidden">
@@ -54,20 +53,22 @@ export function NeonCurveLanding() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="neon-curve-pulse flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--primary))] font-black text-[hsl(var(--primary-foreground))]">
-              FR
+              {content.brandMark}
             </span>
             <div>
-              <p className="text-sm font-black tracking-tight">FROTH</p>
-              <p className="font-mono text-[11px] text-[hsl(var(--secondary))]">$FROTH · solana</p>
+              <p className="text-sm font-black tracking-tight">{content.tokenName}</p>
+              <p className="font-mono text-[11px] text-[hsl(var(--secondary))]">
+                ${content.ticker} · solana
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge className="hidden gap-1 sm:inline-flex" variant="secondary">
               <Radio className="h-3 w-3" />
-              LIVE ON CURVE
+              {content.liveBadgeLabel}
             </Badge>
             <Button size="sm" className="rounded-full font-black tracking-wide">
-              Buy $FROTH
+              {content.buyButtonLabel}
             </Button>
           </div>
         </div>
@@ -75,7 +76,7 @@ export function NeonCurveLanding() {
 
       <div className="relative overflow-hidden border-b border-[hsl(var(--border))] bg-[hsl(var(--secondary))] py-2 text-[hsl(var(--secondary-foreground))]">
         <div className="neon-curve-marquee flex w-max gap-10 whitespace-nowrap font-mono text-xs font-bold uppercase tracking-[0.2em]">
-          {[...MARQUEE, ...MARQUEE].map((item, i) => (
+          {[...marquee, ...marquee].map((item, i) => (
             <span key={`${item}-${i}`} className="flex items-center gap-10">
               {item}
               <span aria-hidden>•</span>
@@ -92,33 +93,30 @@ export function NeonCurveLanding() {
               className="mb-4 border-[hsl(var(--primary)/0.45)] bg-[hsl(var(--primary)/0.08)] text-[hsl(var(--primary))]"
             >
               <Sparkles className="mr-1 h-3 w-3" />
-              the foam at the top of the curve
+              {content.heroBadge}
             </Badge>
             <h1 className="text-4xl font-black leading-[0.95] tracking-tight sm:text-6xl">
-              Don&apos;t chase
-              <span className="block text-[hsl(var(--primary))]">the candle.</span>
-              <span className="block text-[hsl(var(--secondary))]">Be the froth.</span>
+              {content.heroLine1}
+              <span className="block text-[hsl(var(--primary))]">{content.heroLine2}</span>
+              <span className="block text-[hsl(var(--secondary))]">{content.heroLine3}</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-[hsl(var(--muted-foreground))] sm:text-lg">
-              $FROTH is a pure culture coin for CT degenerates who treat bonding curves like ocean
-              waves. No roadmap to nowhere. No fake utility. Just foam, volume, and reply-game.
+              {content.heroDescription}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" className="rounded-full px-8 font-black">
                 <Rocket className="h-4 w-4" />
-                Ape the foam
+                {content.primaryCtaLabel}
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="rounded-full border-[hsl(var(--secondary))] text-[hsl(var(--secondary))] hover:bg-[hsl(var(--secondary)/0.12)]"
               >
-                Open Pump.fun
+                {content.secondaryCtaLabel}
               </Button>
             </div>
-            <p className="mt-4 text-xs text-[hsl(var(--muted-foreground))]">
-              Built for: reply guys, raid captains, and anyone who buys the first meme screenshot.
-            </p>
+            <p className="mt-4 text-xs text-[hsl(var(--muted-foreground))]">{content.audienceLine}</p>
           </div>
 
           <Card className="neon-curve-float relative overflow-hidden border-[hsl(var(--primary)/0.35)] bg-[hsl(var(--card)/0.9)] shadow-[0_0_60px_-20px_hsl(72_100%_52%/0.55)]">
@@ -131,14 +129,14 @@ export function NeonCurveLanding() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="font-mono text-sm uppercase tracking-[0.18em] text-[hsl(var(--primary))]">
-                  Bonding terminal
+                  {content.terminalTitle}
                 </CardTitle>
                 <Badge variant="secondary" className="gap-1">
                   <Flame className="h-3 w-3" />
                   HOT
                 </Badge>
               </div>
-              <CardDescription>Live mock fill — for template preview only</CardDescription>
+              <CardDescription>{content.terminalDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
@@ -168,18 +166,14 @@ export function NeonCurveLanding() {
               </div>
               <Separator />
               <div className="grid grid-cols-3 gap-3 text-center">
-                {[
-                  ["Holders", "1.2k"],
-                  ["Replies", "840"],
-                  ["Raids", "12"],
-                ].map(([label, value]) => (
+                {content.terminalStats.map((stat) => (
                   <div
-                    key={label}
+                    key={stat.label}
                     className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.45)] px-2 py-3"
                   >
-                    <p className="font-mono text-lg font-black">{value}</p>
+                    <p className="font-mono text-lg font-black">{stat.value}</p>
                     <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                      {label}
+                      {stat.label}
                     </p>
                   </div>
                 ))}
@@ -189,31 +183,21 @@ export function NeonCurveLanding() {
         </section>
 
         <section className="mt-16 grid gap-5 sm:grid-cols-3">
-          <Card className="neon-curve-skew-card border-[hsl(var(--primary)/0.25)]">
-            <CardHeader>
-              <CardTitle className="text-base">One-glance meme</CardTitle>
-              <CardDescription>
-                Foam crown on a green candle. If you need a thread to get it, it&apos;s already too
-                late.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card className="neon-curve-skew-card-alt border-[hsl(var(--secondary)/0.3)]">
-            <CardHeader>
-              <CardTitle className="text-base">CT-native deploy</CardTitle>
-              <CardDescription>
-                Pin the screenshot, raid the replies, let the curve do the talking. Culture first.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card className="neon-curve-skew-card border-[hsl(var(--primary)/0.25)]">
-            <CardHeader>
-              <CardTitle className="text-base">Shelf-life: loud</CardTitle>
-              <CardDescription>
-                24–72h of chaos energy. Then either legend status or beautiful foam on the beach.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          {content.features.map((feature, index) => (
+            <Card
+              key={feature.title}
+              className={
+                index === 1
+                  ? "neon-curve-skew-card-alt border-[hsl(var(--secondary)/0.3)]"
+                  : "neon-curve-skew-card border-[hsl(var(--primary)/0.25)]"
+              }
+            >
+              <CardHeader>
+                <CardTitle className="text-base">{feature.title}</CardTitle>
+                <CardDescription>{feature.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
         </section>
 
         <section className="mt-16">
@@ -241,15 +225,9 @@ export function NeonCurveLanding() {
             <TabsContent value="lore">
               <Card>
                 <CardContent className="space-y-3 pt-6 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
-                  <p>
-                    Every bonding curve has a crest. Most people buy the body of the wave and drown
-                    in the dump. $FROTH is for the ones floating on top — loud, temporary, and
-                    somehow always in the screenshot.
-                  </p>
-                  <p>
-                    Born on Pump.fun energy, raised in quote-tweets, baptized in Telegram sticker
-                    packs. If your bags feel wet, you&apos;re doing it right.
-                  </p>
+                  {content.loreParagraphs.map((paragraph) => (
+                    <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                  ))}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -257,18 +235,13 @@ export function NeonCurveLanding() {
               <Card>
                 <CardContent className="pt-6">
                   <ul className="space-y-3 text-sm">
-                    {[
-                      ["Supply", "1,000,000,000 $FROTH"],
-                      ["Tax", "0% — we don't do that here"],
-                      ["LP", "Burned when it graduates (or doesn't)"],
-                      ["Utility", "Being early in the group chat"],
-                    ].map(([k, v]) => (
+                    {content.tokenomics.map((row) => (
                       <li
-                        key={k}
+                        key={row.label}
                         className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3 last:border-0"
                       >
-                        <span className="text-[hsl(var(--muted-foreground))]">{k}</span>
-                        <span className="text-right font-mono font-semibold">{v}</span>
+                        <span className="text-[hsl(var(--muted-foreground))]">{row.label}</span>
+                        <span className="text-right font-mono font-semibold">{row.value}</span>
                       </li>
                     ))}
                   </ul>
@@ -281,15 +254,14 @@ export function NeonCurveLanding() {
                   <div className="flex items-start gap-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] p-4">
                     <Users className="mt-0.5 h-5 w-5 text-[hsl(var(--secondary))]" />
                     <div>
-                      <p className="font-semibold">Tonight&apos;s objective</p>
+                      <p className="font-semibold">{content.raidObjectiveTitle}</p>
                       <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-                        Flood the pinned meme with foam emojis. First 50 reply guys get honorary
-                        lifeguard roles in TG.
+                        {content.raidObjectiveBody}
                       </p>
                     </div>
                   </div>
                   <Button variant="secondary" className="w-full rounded-full font-bold">
-                    Join Telegram war room
+                    {content.raidCtaLabel}
                   </Button>
                 </CardContent>
               </Card>
@@ -299,58 +271,38 @@ export function NeonCurveLanding() {
 
         <section className="mt-16 grid gap-8 lg:grid-cols-2">
           <div>
-            <h2 className="text-2xl font-black tracking-tight">Community foam</h2>
+            <h2 className="text-2xl font-black tracking-tight">{content.communityTitle}</h2>
             <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
-              Stickers, raids, and unhinged one-liners. If you&apos;re quiet, you&apos;re already
-              underwater.
+              {content.communityDescription}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="outline" className="rounded-full">
                 <X className="h-4 w-4" />
-                Follow @frothcoin
+                {content.xLinkLabel}
               </Button>
               <Button variant="secondary" className="rounded-full">
                 <Users className="h-4 w-4" />
-                TG: froth-fam
+                {content.telegramLinkLabel}
               </Button>
             </div>
           </div>
 
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="rug">
-              <AccordionTrigger className="text-[hsl(var(--foreground))]">
-                Is this a rug?
-              </AccordionTrigger>
-              <AccordionContent>
-                It&apos;s a memecoin. Assume chaos. Dev keys are as trustworthy as a beach forecast —
-                check the curve, not the vibes thread.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="why">
-              <AccordionTrigger className="text-[hsl(var(--foreground))]">
-                Why $FROTH?
-              </AccordionTrigger>
-              <AccordionContent>
-                Because every green candle leaves foam. Somebody had to brand it before CT did it
-                with a worse ticker.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="how">
-              <AccordionTrigger className="text-[hsl(var(--foreground))]">
-                How do I buy?
-              </AccordionTrigger>
-              <AccordionContent>
-                Connect wallet → open Pump.fun → search $FROTH → ape size you can laugh about later.
-                This page is a template preview, not financial advice.
-              </AccordionContent>
-            </AccordionItem>
+            {content.faq.map((item, index) => (
+              <AccordionItem key={item.question} value={`faq-${index}`}>
+                <AccordionTrigger className="text-[hsl(var(--foreground))]">
+                  {item.question}
+                </AccordionTrigger>
+                <AccordionContent>{item.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </section>
       </main>
 
       <footer className="relative border-t border-[hsl(var(--border))] px-5 py-6 text-center sm:px-8">
         <p className="font-mono text-[11px] text-[hsl(var(--muted-foreground))]">
-          Neon Curve template · $FROTH demo · hypelaunch.space/templates/neon-curve
+          {content.footerNote}
         </p>
       </footer>
     </div>
