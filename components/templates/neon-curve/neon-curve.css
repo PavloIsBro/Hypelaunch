@@ -1,0 +1,117 @@
+/* Scoped to .neon-curve only — does not alter global project theme. */
+.neon-curve {
+  --background: 280 40% 4%;
+  --foreground: 60 100% 96%;
+  --card: 280 30% 8%;
+  --card-foreground: 60 100% 96%;
+  --primary: 72 100% 52%;
+  --primary-foreground: 280 40% 4%;
+  --secondary: 322 100% 58%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 280 20% 14%;
+  --muted-foreground: 280 10% 70%;
+  --accent: 280 25% 16%;
+  --accent-foreground: 72 100% 70%;
+  --destructive: 0 85% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 280 20% 22%;
+  --ring: 72 100% 52%;
+  --radius: 0.75rem;
+
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: var(--font-neon-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.neon-curve-grid {
+  background-image:
+    linear-gradient(hsl(72 100% 52% / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(72 100% 52% / 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, black 20%, transparent 75%);
+}
+
+.neon-curve-marquee {
+  animation: neon-curve-marquee 28s linear infinite;
+}
+
+.neon-curve-pulse {
+  animation: neon-curve-pulse 2.4s ease-in-out infinite;
+}
+
+.neon-curve-float {
+  animation: neon-curve-float 5s ease-in-out infinite;
+}
+
+.neon-curve-skew-card {
+  transform: rotate(-1.5deg);
+  transition: transform 0.35s ease;
+}
+
+.neon-curve-skew-card:hover {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+.neon-curve-skew-card-alt {
+  transform: rotate(1.8deg);
+  transition: transform 0.35s ease;
+}
+
+.neon-curve-skew-card-alt:hover {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+@keyframes neon-curve-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes neon-curve-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(72 100% 52% / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 28px 4px hsl(72 100% 52% / 0.35);
+  }
+}
+
+@keyframes neon-curve-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-2deg);
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.neon-curve .animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.neon-curve .animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
