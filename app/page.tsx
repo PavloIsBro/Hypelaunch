@@ -2,7 +2,6 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { PlanId } from "@/lib/plans";
-import { AutomationPreview } from "@/components/AutomationPreview";
 import { Background } from "@/components/Background";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { IntelligenceDisclaimer } from "@/components/IntelligenceDisclaimer";
@@ -12,13 +11,14 @@ import { LaunchExecutionPreview } from "@/components/LaunchExecutionPreview";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PaymentUnlock } from "@/components/PaymentUnlock";
 import { PricingCards } from "@/components/PricingCards";
-import { PurchasedAddonsBadges } from "@/components/PurchasedAddonsBadges";
 import { ResultTierBadge } from "@/components/ResultTierBadge";
+import { TrendRecommendations } from "@/components/TrendRecommendations";
+import { TwitterSignalsPanel } from "@/components/TwitterSignalsPanel";
 import { EMPTY_ADDONS, type PurchasedAddons } from "@/lib/addons";
 import { ScoreInsights } from "@/components/ScoreInsights";
 import { ScoreRing } from "@/components/ScoreRing";
 import { StrategyCard } from "@/components/StrategyCard";
-import { fetchLaunchKit } from "@/lib/client-generate";
+import { fetchLaunchKit, fetchTwitterSignalsLive } from "@/lib/client-generate";
 import type { LaunchKitFull, PaidPlan } from "@/lib/types";
 
 const PRO_INTELLIGENCE_SECTIONS = [
@@ -26,36 +26,43 @@ const PRO_INTELLIGENCE_SECTIONS = [
     title: "Pump.fun narrative analysis",
     subtitle: "Meta fit & attention velocity",
     key: "pumpFunNarrativeAnalysis" as const,
+    icon: "pulse" as const,
   },
   {
     title: "Competitor memecoin analysis",
     subtitle: "Recent micro-cap lookalikes",
     key: "competitorMemecoinAnalysis" as const,
+    icon: "compete" as const,
   },
   {
     title: "Market saturation",
     subtitle: "Narrative bucket crowding",
     key: "marketSaturation" as const,
+    icon: "gauge" as const,
   },
   {
     title: "Similar recent narratives",
     subtitle: "Parallel CT attention plays",
     key: "similarRecentNarratives" as const,
+    icon: "signal" as const,
   },
   {
     title: "Launch timing signal",
     subtitle: "Enter / wait / avoid",
     key: "launchTimingSignal" as const,
+    icon: "timing" as const,
   },
   {
     title: "Risk notes",
     subtitle: "Launch-specific risks",
     key: "riskNotes" as const,
+    icon: "risk" as const,
   },
   {
     title: "Recommended positioning",
     subtitle: "How to differentiate",
     key: "recommendedPositioning" as const,
+    icon: "target" as const,
   },
 ];
 
@@ -68,10 +75,13 @@ export default function HomePage() {
   const [selectedPaid, setSelectedPaid] = useState<PaidPlan | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [generateNotice, setGenerateNotice] = useState<string | null>(null);
+  const [twitterPending, setTwitterPending] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
   const generateBusyRef = useRef(false);
   const generateRequestIdRef = useRef(0);
   const generateAbortRef = useRef<AbortController | null>(null);
+  /** Hold scrape result so it is never lost if it arrives before the kit. */
+  const pendingTwitterRef = useRef<LaunchKitFull["twitterSignals"] | null>(null);
 
   useEffect(() => {
     return () => {
@@ -79,72 +89,129 @@ export default function HomePage() {
     };
   }, []);
 
-  const handleGenerate = useCallback(async () => {
-    const trimmed = idea.trim();
-    if (!trimmed || generateBusyRef.current) return;
+  const handleGenerate = useCallback(
+    async (
+      mode: "check" | "launch",
+      options?: { ideaOverride?: string; keepUnlock?: boolean },
+    ) => {
+      const trimmed = (options?.ideaOverride ?? idea).trim();
+      if (!trimmed || generateBusyRef.current) return;
 
-    generateBusyRef.current = true;
-    generateAbortRef.current?.abort();
-    const controller = new AbortController();
-    generateAbortRef.current = controller;
-    const requestId = ++generateRequestIdRef.current;
+      generateBusyRef.current = true;
+      generateAbortRef.current?.abort();
+      const controller = new AbortController();
+      generateAbortRef.current = controller;
+      const requestId = ++generateRequestIdRef.current;
 
-    const selectedPlan: PlanId = selectedPaid ?? unlocked ?? "free";
-    const automationAddons: PurchasedAddons = { ...purchasedAddons };
+      const selectedPlan: PlanId = mode === "launch" || options?.keepUnlock ? "pro" : "free";
+      const automationAddons: PurchasedAddons = { ...purchasedAddons };
+      const preserveUnlock = Boolean(options?.keepUnlock && unlocked === "pro");
 
-    setLoading(true);
-    setFullResult(null);
-    setUnlocked(null);
-    setPurchasedAddons(EMPTY_ADDONS);
-    setSelectedPaid(null);
-    setGenerateError(null);
-    setGenerateNotice(null);
-
-    try {
-      const data = await fetchLaunchKit(
-        {
-          idea: trimmed,
-          selectedPlan,
-          automationAddons,
-        },
-        controller.signal,
-      );
-
-      if (requestId !== generateRequestIdRef.current) return;
-
-      setFullResult(data.kit);
-      setGenerateNotice(data.message ?? null);
-      window.setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 80);
-    } catch (err) {
-      if (requestId !== generateRequestIdRef.current) return;
-      if (err instanceof DOMException && err.name === "AbortError") return;
-
-      console.error("Generate failed", err);
-      setGenerateError(
-        err instanceof Error ? err.message : "Could not generate your report. Please try again.",
-      );
-    } finally {
-      if (requestId === generateRequestIdRef.current) {
-        generateBusyRef.current = false;
-        setLoading(false);
+      if (options?.ideaOverride) {
+        setIdea(options.ideaOverride);
       }
-    }
-  }, [idea, purchasedAddons, selectedPaid, unlocked]);
+
+      setLoading(true);
+      setFullResult(null);
+      pendingTwitterRef.current = null;
+      setTwitterPending(true);
+      if (!preserveUnlock) {
+        setUnlocked(null);
+        setPurchasedAddons(EMPTY_ADDONS);
+        setSelectedPaid(mode === "launch" ? "pro" : null);
+      } else {
+        setSelectedPaid(null);
+      }
+      setGenerateError(null);
+      setGenerateNotice(null);
+
+      try {
+        // Start Twitter scrape in parallel (async Apify run + client poll).
+        // Do NOT await scrape inside /api/generate — that caused Vercel 504.
+        const applyTwitter = (signals: NonNullable<LaunchKitFull["twitterSignals"]>) => {
+          if (requestId !== generateRequestIdRef.current) return;
+          pendingTwitterRef.current = signals;
+          setTwitterPending(false);
+          setFullResult((prev) => (prev ? { ...prev, twitterSignals: signals } : prev));
+        };
+
+        const twitterPromise = fetchTwitterSignalsLive(
+          trimmed,
+          controller.signal,
+          applyTwitter,
+        ).catch((err) => {
+          console.error("Twitter scrape failed", err);
+          if (requestId === generateRequestIdRef.current) setTwitterPending(false);
+          return null;
+        });
+
+        const data = await fetchLaunchKit(
+          {
+            idea: trimmed,
+            selectedPlan,
+            automationAddons,
+          },
+          controller.signal,
+        );
+
+        if (requestId !== generateRequestIdRef.current) return;
+
+        // Merge any scrape that finished before the kit arrived.
+        setFullResult({
+          ...data.kit,
+          twitterSignals: pendingTwitterRef.current ?? data.kit.twitterSignals,
+        });
+        if (preserveUnlock) {
+          setUnlocked("pro");
+        }
+        setGenerateNotice(data.message ?? null);
+        window.setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+        if (mode === "launch" && !preserveUnlock) {
+          window.setTimeout(() => {
+            document.getElementById("payment-unlock")?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }, 320);
+        }
+
+        // Merge live Twitter when scrape finishes (may arrive after kit).
+        void twitterPromise.then((signals) => {
+          if (requestId !== generateRequestIdRef.current) return;
+          if (signals) applyTwitter(signals);
+          else setTwitterPending(false);
+        });
+      } catch (err) {
+        if (requestId !== generateRequestIdRef.current) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+
+        console.error("Generate failed", err);
+        setGenerateError(
+          err instanceof Error ? err.message : "Could not generate your report. Please try again.",
+        );
+      } finally {
+        if (requestId === generateRequestIdRef.current) {
+          generateBusyRef.current = false;
+          setLoading(false);
+        }
+      }
+    },
+    [idea, purchasedAddons, unlocked],
+  );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void handleGenerate();
+    void handleGenerate("check");
   };
 
-  const showProContent = unlocked === "pro" || unlocked === "extra";
-  const showExtraContent = unlocked === "extra";
+  const showLaunchContent = unlocked === "pro";
 
   return (
     <>
       <Background paused={loading} />
-      {loading ? <LoadingOverlay message="Analyzing market signals…" /> : null}
+      {loading ? <LoadingOverlay message="Building your launch kit…" /> : null}
 
       <div
         className={[
@@ -157,9 +224,9 @@ export default function HomePage() {
         <header className="flex w-full flex-col items-center text-center">
           <HeaderBrand />
 
-          <p className="animate-fade-up stagger-1 mt-4 max-w-lg text-pretty text-base text-zinc-400 sm:text-lg">
-            Memecoin market intelligence and launch readiness system
-          </p>
+          <h2 className="animate-fade-up stagger-1 mt-5 max-w-2xl text-pretty text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+            Make memecoin with one prompt
+          </h2>
 
           <form onSubmit={handleSubmit} className="animate-fade-up stagger-2 mt-10 w-full max-w-2xl">
             <label htmlFor="idea" className="sr-only">
@@ -172,19 +239,30 @@ export default function HomePage() {
                 type="text"
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
-                placeholder="Describe your Pump.fun memecoin idea..."
+                placeholder="Describe your meme, character, or narrative..."
                 autoComplete="off"
                 disabled={loading}
                 className="w-full rounded-xl border-0 bg-transparent px-5 py-5 text-base text-white outline-none placeholder:text-zinc-600 disabled:opacity-50 sm:text-lg"
               />
             </div>
-            <button
-              type="submit"
-              disabled={loading || !idea.trim()}
-              className="btn-glow mt-4 w-full rounded-2xl bg-white py-4 text-sm font-bold tracking-wide text-black transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none"
-            >
-              {loading ? "Analyzing…" : "Run free intelligence preview"}
-            </button>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="submit"
+                disabled={loading || !idea.trim()}
+                className="rounded-2xl border border-white/15 bg-white/5 py-4 text-sm font-bold tracking-wide text-white transition hover:bg-white/10 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                {loading ? "Checking…" : "Check"}
+              </button>
+              <button
+                type="button"
+                disabled={loading || !idea.trim()}
+                onClick={() => void handleGenerate("launch")}
+                className="btn-glow rounded-2xl bg-white py-4 text-sm font-bold tracking-wide text-black transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none"
+              >
+                {loading ? "Preparing…" : "Launch"}
+              </button>
+            </div>
           </form>
 
           {generateError ? (
@@ -194,8 +272,10 @@ export default function HomePage() {
           ) : null}
 
           {!fullResult && !generateError ? (
-            <p className="animate-fade-in stagger-3 mt-8 text-xs text-zinc-600">
-              Free preview · unlock Pro or Extra for full Pump.fun intelligence
+            <p className="animate-fade-in stagger-3 mt-8 max-w-md text-xs leading-relaxed text-zinc-600">
+              <span className="text-zinc-400">Check</span> — free name, ticker, short description &amp;
+              Interest Score · <span className="text-zinc-400">Launch</span> — full launch kit for{" "}
+              0.2 SOL
             </p>
           ) : null}
         </header>
@@ -212,11 +292,10 @@ export default function HomePage() {
 
             <div className="animate-fade-up flex flex-col gap-3 border-b border-white/5 pb-6">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-violet-400/80">
-                  {unlocked ? "Full intelligence report" : "Limited preview"}
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-cyan-400/80">
+                  {unlocked ? "Full launch kit" : "Check preview"}
                 </p>
                 <ResultTierBadge unlocked={unlocked} />
-                <PurchasedAddonsBadges addons={purchasedAddons} />
               </div>
               <h2 className="text-2xl font-bold text-white sm:text-3xl">
                 {fullResult.tokenName}{" "}
@@ -231,34 +310,63 @@ export default function HomePage() {
               <ScoreRing
                 label="Interest Score"
                 score={fullResult.interestScore}
-                accent="violet"
                 animate
                 className="animate-fade-up stagger-1"
               />
               <ScoreRing
                 label="Launch Readiness Score"
                 score={fullResult.launchReadinessScore}
-                accent="cyan"
-                animate={showProContent}
-                locked={!showProContent}
+                animate={showLaunchContent}
+                locked={!showLaunchContent}
                 className="animate-fade-up stagger-2"
               />
             </div>
 
+            {fullResult.twitterSignals ? (
+              <TwitterSignalsPanel
+                signals={fullResult.twitterSignals}
+                className="animate-fade-up"
+              />
+            ) : twitterPending ? (
+              <section className="animate-fade-up rounded-2xl border border-cyan-400/20 bg-[#0a0a0a]/95 p-5 sm:p-6">
+                <h2 className="text-sm font-semibold text-white">X / Twitter live parse</h2>
+                <p className="mt-2 text-sm text-zinc-400">
+                  Scanning X for attention signals… this can take up to a minute.
+                </p>
+              </section>
+            ) : null}
+
             <ScoreInsights
               interestReasoning={fullResult.interestReasoning}
               launchReadinessReasoning={fullResult.launchReadinessReasoning}
-              variant={showProContent ? "full" : "preview"}
+              variant={showLaunchContent ? "full" : "preview"}
               className="animate-fade-up"
             />
 
             <KitBasics
               result={fullResult}
-              variant={showProContent ? "full" : "preview"}
+              variant={showLaunchContent ? "full" : "preview"}
               className="animate-fade-up stagger-2"
             />
 
-            {showProContent ? (
+            {showLaunchContent ? (
+              <TrendRecommendations
+                currentPrompt={fullResult.idea}
+                currentInterest={fullResult.interestScore}
+                currentReadiness={fullResult.launchReadinessScore}
+                recommendations={fullResult.trendRecommendations ?? []}
+                disabled={loading}
+                onSelect={(prompt) => {
+                  void handleGenerate("launch", {
+                    ideaOverride: prompt,
+                    keepUnlock: true,
+                  });
+                }}
+                className="animate-fade-up"
+              />
+            ) : null}
+
+            {showLaunchContent ? (
               <div className="grid gap-4 lg:grid-cols-2">
                 {PRO_INTELLIGENCE_SECTIONS.map((section) => (
                   <StrategyCard
@@ -266,6 +374,7 @@ export default function HomePage() {
                     title={section.title}
                     subtitle={section.subtitle}
                     body={fullResult[section.key]}
+                    icon={section.icon}
                     className="animate-fade-up"
                   />
                 ))}
@@ -273,14 +382,13 @@ export default function HomePage() {
             ) : (
               <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">
                 <p className="text-zinc-400">
-                  Pump.fun narrative analysis, competitor scan, market saturation, timing signal,
-                  risk notes, and positioning unlock with{" "}
-                  <span className="text-violet-300">Pro</span>.
+                  Full positioning, landing, Customer journey map, and X-trend prompt angles unlock
+                  with <span className="text-emerald-300">Launch</span>.
                 </p>
               </div>
             )}
 
-            {showExtraContent ? (
+            {showLaunchContent ? (
               <>
                 <LandingExtraPreview
                   idea={fullResult.idea}
@@ -293,30 +401,6 @@ export default function HomePage() {
                   className="animate-fade-up"
                 />
               </>
-            ) : unlocked === "pro" ? (
-              <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-violet-500/20 p-8 text-center text-sm text-zinc-500">
-                <p>
-                  <span className="text-violet-300">Extra</span> adds AI landing page preview and
-                  launch execution layer — unlock below.
-                </p>
-              </div>
-            ) : null}
-
-            {showExtraContent && (purchasedAddons.x || purchasedAddons.telegram) ? (
-              <AutomationPreview
-                xPosting={fullResult.automation.xPosting}
-                telegramBot={fullResult.automation.telegramBot}
-                enabled={purchasedAddons}
-                className="animate-fade-up"
-              />
-            ) : showExtraContent ? (
-              <div className="glass-card animate-fade-up rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-zinc-500">
-                <p>
-                  Add optional <span className="text-violet-300">X</span> or{" "}
-                  <span className="text-cyan-300">Telegram</span> launch automation at checkout
-                  (+0.1 SOL each).
-                </p>
-              </div>
             ) : null}
 
             <div className="space-y-4 pt-4">
@@ -339,17 +423,14 @@ export default function HomePage() {
               />
             </div>
 
-            {selectedPaid && (unlocked === null || (unlocked === "pro" && selectedPaid === "extra")) ? (
+            {selectedPaid && unlocked === null ? (
               <div id="payment-unlock" className="scroll-mt-8">
                 <PaymentUnlock
                   targetPlan={selectedPaid}
                   unlocked={unlocked}
-                  onUnlocked={(plan, addons) => {
+                  onUnlocked={(plan) => {
                     setUnlocked(plan);
-                    setPurchasedAddons((prev) => ({
-                      x: prev.x || addons.x,
-                      telegram: prev.telegram || addons.telegram,
-                    }));
+                    setPurchasedAddons(EMPTY_ADDONS);
                     setSelectedPaid(null);
                   }}
                 />

@@ -4,6 +4,8 @@ import { generateLaunchKit } from "@/lib/generate-launch-kit";
 import type { PlanId } from "@/lib/plans";
 
 export const runtime = "nodejs";
+/** Keep generate under Vercel limits — Twitter scrape is separate & polled. */
+export const maxDuration = 30;
 
 type GenerateBody = {
   idea?: string;
@@ -23,7 +25,8 @@ function parseAddons(raw: Partial<PurchasedAddons> | undefined): PurchasedAddons
 }
 
 function parsePlan(raw: unknown): PlanId {
-  if (raw === "pro" || raw === "extra" || raw === "free") return raw;
+  if (raw === "pro" || raw === "free") return raw;
+  if (raw === "extra") return "pro";
   return "free";
 }
 
@@ -55,6 +58,7 @@ export async function POST(request: Request) {
     const plan = parsePlan(body.selectedPlan ?? body.plan);
     const addons = parseAddons(body.automationAddons ?? body.addons ?? EMPTY_ADDONS);
 
+    // Do NOT block on Apify here — it causes Vercel 504. Client polls /api/twitter-signals.
     const { kit, source } = await generateLaunchKit(idea, plan, addons);
 
     console.log("[api/generate] success", { source, ticker: kit.ticker });

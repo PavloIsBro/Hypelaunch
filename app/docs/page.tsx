@@ -5,7 +5,7 @@ import { Background } from "@/components/Background";
 export const metadata: Metadata = {
   title: "Docs — Hypelaunch",
   description:
-    "How Hypelaunch works: memecoin market intelligence, scores, plans, automation add-ons, and payments.",
+    "How Hypelaunch works: Check preview, Launch kit, Interest Score, and payments.",
 };
 
 function DocSection({
@@ -38,7 +38,7 @@ export default function DocsPage() {
               Hypelaunch Docs
             </h1>
             <p className="mt-3 max-w-xl text-sm text-zinc-500 sm:text-base">
-              Memecoin market intelligence and launch readiness for Pump.fun-style launches.
+              AI-powered crypto launch workflow — from one idea to a ready memecoin launch kit.
             </p>
           </div>
           <Link
@@ -54,9 +54,7 @@ export default function DocsPage() {
             ["what", "What"],
             ["how", "How it works"],
             ["interest", "Interest Score"],
-            ["readiness", "Launch Readiness"],
-            ["plans", "Plans"],
-            ["addons", "Add-ons"],
+            ["plans", "Check & Launch"],
             ["payment", "Payment"],
           ].map(([id, label]) => (
             <a
@@ -74,31 +72,28 @@ export default function DocsPage() {
             <p>
               Hypelaunch is an AI-powered{" "}
               <strong className="font-medium text-zinc-200">
-                memecoin market intelligence and launch readiness system
-              </strong>{" "}
-              for Pump.fun-style launches. You enter one idea and receive structured analysis —
-              scores, competitor context, saturation, timing signals, and risk framing — not generic
-              tweets or Telegram Q&A.
+                crypto launch workflow platform
+              </strong>
+              . You enter one idea and get a memecoin launch kit: name, ticker, narrative, Interest
+              Score, and landing with Customer journey map.
             </p>
             <p className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-amber-200/90">
               Current reports are{" "}
-              <strong className="text-amber-100">AI-estimated previews</strong>. Live X and
-              Pump.fun data integrations are coming soon.
+              <strong className="text-amber-100">AI-estimated previews</strong>. Live X data
+              integrations are coming soon.
             </p>
           </DocSection>
 
           <DocSection id="how" title="2. How it works">
             <ol className="list-decimal space-y-2 pl-5">
-              <li>Enter your memecoin idea in the app.</li>
+              <li>Enter your memecoin idea.</li>
               <li>
-                Hypelaunch generates a market intelligence report: token name, ticker, narrative
-                summary, Interest Score, Launch Readiness Score, Pump.fun narrative analysis,
-                competitor memecoin scan, saturation, timing signal, risk notes, and positioning.
+                Choose <strong className="text-zinc-200">Check</strong> for a free preview or{" "}
+                <strong className="text-zinc-200">Launch</strong> for the full paid kit (0.2 SOL).
               </li>
               <li>
-                Review your free preview, then unlock Pro or Extra for the full report. Extra adds
-                landing page concept and launch execution layer. Optional automation add-ons can be
-                added at checkout.
+                Use the kit to launch yourself on pump.fun or another deployer — Hypelaunch does not
+                deploy the token for you.
               </li>
             </ol>
           </DocSection>
@@ -106,93 +101,43 @@ export default function DocsPage() {
           <DocSection id="interest" title="3. Interest Score">
             <p>
               The <strong className="font-medium text-sky-300">Interest Score</strong> estimates
-              how much current attention exists around your narrative on CT / Pump.fun-style
-              markets. Higher scores suggest the angle may have momentum — useful for timing and
-              positioning, not as a guarantee of outcomes.
+              how relevant your narrative looks right now based on X / CT attention. Higher scores
+              suggest stronger timing — not a guarantee of outcomes.
             </p>
           </DocSection>
 
-          <DocSection id="readiness" title="4. Launch Readiness Score">
-            <p>
-              The <strong className="font-medium text-cyan-300">Launch Readiness Score</strong>{" "}
-              reflects how prepared your launch looks: narrative clarity, differentiation,
-              saturation risk, and packaging before deploy.
-            </p>
-            <p className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-amber-200/90">
-              This score is <strong>not</strong> a prediction of success or price action. It is a
-              readiness checklist derived from your intelligence report.
-            </p>
-          </DocSection>
-
-          <DocSection id="plans" title="5. Plans">
-            <div className="grid gap-3 sm:grid-cols-3">
+          <DocSection id="plans" title="4. Check & Launch">
+            <div className="grid gap-3 sm:grid-cols-2">
               <article className="rounded-xl border border-white/[0.06] bg-black/40 p-4">
-                <h3 className="font-semibold text-white">Free</h3>
+                <h3 className="font-semibold text-white">Check</h3>
                 <p className="mt-2 text-sm text-zinc-500">
-                  Basic idea check, narrative summary, and limited Interest Score preview.
+                  Free: token name, ticker, short description / idea, and Interest Score.
                 </p>
               </article>
               <article className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <h3 className="font-semibold text-emerald-300">Pro</h3>
+                <h3 className="font-semibold text-emerald-300">Launch — 0.2 SOL</h3>
                 <p className="mt-2 text-sm text-zinc-500">
-                  Full Pump.fun narrative analysis, competitor memecoin scan, market saturation,
-                  timing signal, risk notes, recommended positioning, and both scores with reasoning.
-                </p>
-              </article>
-              <article className="rounded-xl border border-sky-500/25 bg-sky-500/10 p-4">
-                <h3 className="font-semibold text-sky-300">Extra</h3>
-                <p className="mt-2 text-sm text-zinc-500">
-                  Everything in Pro plus AI-generated landing page preview (React template),
-                  launch execution layer,
-                  and optional automation add-ons at checkout.
+                  Paid full launch kit: image concept, landing with Customer journey map,
+                  positioning, and launch readiness.
                 </p>
               </article>
             </div>
           </DocSection>
 
-          <DocSection id="addons" title="6. Automation Add-ons">
-            <p>
-              Launch automation is <strong className="text-zinc-200">optional</strong> and not
-              included in Pro or Extra by default. Requires Extra unlock at checkout.
-            </p>
-            <ul className="space-y-3">
-              <li className="rounded-xl border border-sky-500/20 bg-sky-500/5 px-4 py-3">
-                <span className="font-semibold text-sky-200">X/Twitter Automation</span>
-                <span className="ml-2 font-mono text-xs text-sky-300/80">+0.1 SOL</span>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Launch-window monitoring, timing alerts, and signal-based posting cadence.
-                </p>
-              </li>
-              <li className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
-                <span className="font-semibold text-cyan-200">Telegram Automation</span>
-                <span className="ml-2 font-mono text-xs text-cyan-300/80">+0.1 SOL</span>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Community ops automation during launch — coordination flows and alerts.
-                </p>
-              </li>
-            </ul>
-          </DocSection>
-
-          <DocSection id="payment" title="7. Payment flow">
+          <DocSection id="payment" title="5. Payment flow">
             <ol className="list-decimal space-y-2 pl-5">
               <li>
-                Select <strong className="text-zinc-200">Pro</strong> or{" "}
-                <strong className="text-zinc-200">Extra</strong> from pricing.
+                Click <strong className="text-zinc-200">Launch</strong> or unlock Launch from
+                pricing.
+              </li>
+              <li>Connect your Phantom wallet.</li>
+              <li>
+                Pay <strong className="text-zinc-200">0.2 SOL</strong> to unlock the full kit.
               </li>
               <li>
-                Optionally enable automation add-ons with toggles — total price updates in real
-                time.
+                For the current demo, payment is{" "}
+                <strong className="text-zinc-200">mocked</strong>. No on-chain charge is sent yet.
               </li>
-              <li>Connect your Phantom wallet (Solana Wallet Adapter).</li>
-              <li>
-                Click <strong className="text-zinc-200">Buy for X SOL</strong> to complete checkout.
-              </li>
-              <li>
-                For the current demo, payment confirmation is{" "}
-                <strong className="text-zinc-200">mocked</strong> with a realistic transaction
-                animation. No on-chain charge is sent yet.
-              </li>
-              <li>After confirmation, your plan and any add-ons unlock in the results view.</li>
             </ol>
           </DocSection>
         </div>

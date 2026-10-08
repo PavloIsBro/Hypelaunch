@@ -25,7 +25,7 @@ export function AutomationAddonsSection({
     <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
       <div className="mb-4">
         <h4 className="text-sm font-semibold text-white">Automation Add-ons</h4>
-        <p className="mt-0.5 text-xs text-zinc-500">Optional — not included in Pro or Extra by default</p>
+        <p className="mt-0.5 text-xs text-zinc-500">Optional boost for Launch checkout</p>
       </div>
       <ul className="space-y-3">
         {AUTOMATION_ADDONS.map((addon) => {

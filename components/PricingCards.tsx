@@ -15,16 +15,12 @@ export function PricingCards({
   disabled,
 }: PricingCardsProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       {PRICING_PLANS.map((plan) => {
         const isFree = plan.id === "free";
-        const isExtra = plan.id === "extra";
-        const paidId = plan.id === "pro" || plan.id === "extra" ? plan.id : null;
-        const isSelected = paidId && selected === paidId;
-        const isCurrentTier =
-          (isFree && !unlocked) ||
-          (plan.id === "pro" && unlocked === "pro") ||
-          (plan.id === "extra" && unlocked === "extra");
+        const isLaunch = plan.id === "pro";
+        const isSelected = isLaunch && selected === "pro";
+        const isCurrentTier = (isFree && !unlocked) || (isLaunch && unlocked === "pro");
 
         return (
           <article
@@ -32,7 +28,7 @@ export function PricingCards({
             className={[
               "glass-card relative flex flex-col rounded-2xl p-6 transition",
               isSelected && "ring-1 ring-violet-500/50",
-              isExtra && unlocked !== "extra" && "md:shadow-lg md:shadow-violet-950/40",
+              isLaunch && unlocked !== "pro" && "md:shadow-lg md:shadow-violet-950/40",
             ]
               .filter(Boolean)
               .join(" ")}
@@ -53,7 +49,7 @@ export function PricingCards({
               </span>
             ) : (
               <span className="mb-3 text-[10px] font-bold uppercase tracking-wide text-zinc-600">
-                Starter
+                Free
               </span>
             )}
 
@@ -72,33 +68,22 @@ export function PricingCards({
             <div className="mt-6">
               {isFree ? (
                 <p className="text-center text-xs text-zinc-500">
-                  {isCurrentTier ? "You are viewing the free preview." : null}
+                  {isCurrentTier ? "You are viewing the Check preview." : null}
                 </p>
               ) : (
                 <button
                   type="button"
-                  disabled={
-                    disabled ||
-                    (plan.id === "pro" && unlocked === "pro") ||
-                    (plan.id === "extra" && unlocked === "extra") ||
-                    (plan.id === "pro" && unlocked === "extra")
-                  }
-                  onClick={() => onSelectPaid(plan.id as PaidPlan)}
+                  disabled={disabled || unlocked === "pro"}
+                  onClick={() => onSelectPaid("pro")}
                   className={[
                     "w-full rounded-xl py-3 text-sm font-semibold transition",
-                    isExtra
-                      ? "bg-gradient-to-r from-violet-600 to-violet-800 text-white hover:opacity-95"
-                      : "border border-white/15 bg-white/5 text-white hover:bg-white/10",
+                    "bg-gradient-to-r from-violet-600 to-violet-800 text-white hover:opacity-95",
                     isSelected && "ring-2 ring-white/20",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                 >
-                  {plan.id === "pro" && unlocked === "extra"
-                    ? "Included in Extra"
-                    : unlocked === plan.id
-                      ? "Unlocked"
-                      : `Unlock ${plan.label}`}
+                  {unlocked === "pro" ? "Unlocked" : `Unlock ${plan.label}`}
                 </button>
               )}
             </div>

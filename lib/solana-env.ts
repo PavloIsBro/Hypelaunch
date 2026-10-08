@@ -26,13 +26,7 @@ export function getProjectWallet(): string {
 }
 
 export function getProPriceSol(): number {
-  const raw = process.env.NEXT_PUBLIC_PRO_PRICE_SOL ?? "0.05";
-  const n = Number.parseFloat(raw);
-  return Number.isFinite(n) && n > 0 ? n : 0.05;
-}
-
-export function getExtraPriceSol(): number {
-  const raw = process.env.NEXT_PUBLIC_EXTRA_PRICE_SOL ?? "0.2";
+  const raw = process.env.NEXT_PUBLIC_PRO_PRICE_SOL ?? "0.2";
   const n = Number.parseFloat(raw);
   return Number.isFinite(n) && n > 0 ? n : 0.2;
 }

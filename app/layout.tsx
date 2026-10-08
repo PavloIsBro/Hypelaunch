@@ -10,9 +10,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Hypelaunch — Memecoin Market Intelligence",
+  title: "Hypelaunch — Make memecoin with one prompt",
   description:
-    "AI market intelligence and launch readiness for Pump.fun-style memecoin launches. Scores, competitor analysis, timing signals, and landing concepts.",
+    "AI-powered crypto launch workflow. Turn one idea into a memecoin launch kit: name, ticker, Interest Score, landing, and X/Telegram content.",
   metadataBase: new URL("https://hypelaunch.space"),
   icons: {
     icon: "/logo.png",
