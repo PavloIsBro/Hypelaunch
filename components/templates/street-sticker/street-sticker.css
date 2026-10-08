@@ -1,0 +1,63 @@
+/* Scoped to .street-sticker only — graffiti / sticker-bomb. */
+.street-sticker {
+  --st-bg: #1a1612;
+  --st-asphalt: #241f1a;
+  --st-cream: #f5e6c8;
+  --st-black: #0c0a08;
+  --st-red: #e11d48;
+  --st-blue: #2563eb;
+  --st-lime: #a3e635;
+  --st-orange: #f97316;
+  --st-muted: #a89a86;
+
+  color: var(--st-cream);
+  background: var(--st-bg);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.street-sticker-display {
+  font-family: var(--font-street-display), Impact, "Arial Narrow", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.street-sticker-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+  opacity: 0.45;
+  mix-blend-mode: overlay;
+}
+
+.street-sticker-ribbon {
+  animation: street-sticker-ribbon 26s linear infinite;
+}
+
+.street-sticker-wobble {
+  transition: transform 0.25s ease;
+}
+
+.street-sticker-wobble:hover {
+  transform: rotate(0deg) scale(1.03) !important;
+  z-index: 5;
+}
+
+.street-sticker-pulse-stamp {
+  animation: street-sticker-pulse-stamp 2.8s ease-in-out infinite;
+}
+
+@keyframes street-sticker-ribbon {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes street-sticker-pulse-stamp {
+  0%,
+  100% {
+    transform: scale(1) rotate(-3deg);
+  }
+  50% {
+    transform: scale(1.04) rotate(-2deg);
+  }
+}

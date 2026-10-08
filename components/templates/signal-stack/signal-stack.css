@@ -1,0 +1,70 @@
+/* Scoped to .signal-stack only — cold CT terminal desk. */
+.signal-stack {
+  --ss-bg: #0a0e14;
+  --ss-panel: #111820;
+  --ss-panel-2: #161e28;
+  --ss-border: #243041;
+  --ss-text: #c8d4e0;
+  --ss-dim: #6b7c8f;
+  --ss-ice: #7dd3fc;
+  --ss-ice-dim: #38bdf8;
+  --ss-green: #4ade80;
+  --ss-amber: #fbbf24;
+  --ss-red: #f87171;
+
+  color: var(--ss-text);
+  background: var(--ss-bg);
+  font-family: var(--font-signal-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.signal-stack-scan {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(125, 211, 252, 0.015) 2px,
+    rgba(125, 211, 252, 0.015) 4px
+  );
+}
+
+.signal-stack-tape {
+  animation: signal-stack-tape 32s linear infinite;
+}
+
+.signal-stack-blink {
+  animation: signal-stack-blink 1.4s steps(1) infinite;
+}
+
+.signal-stack-pulse-dot {
+  animation: signal-stack-pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes signal-stack-tape {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes signal-stack-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes signal-stack-pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
+  }
+}

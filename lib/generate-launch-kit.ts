@@ -1,5 +1,4 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { generateStructured, getAiProvider, isAiConfigured, type AiSource } from "@/lib/ai";
 import type { PurchasedAddons } from "@/lib/addons";
 import {
   formatTwitterSignalsForPrompt,
@@ -7,7 +6,6 @@ import {
 } from "@/lib/apify-twitter";
 import { generateMockLaunchKit } from "@/lib/mock";
 import { aiLaunchKitSchema, type AiLaunchKitPayload } from "@/lib/launch-kit-schema";
-import { mapLandingPageFields } from "@/lib/landing-page";
 import type { LaunchKitFull } from "@/lib/types";
 import type { PlanId } from "@/lib/plans";
 
@@ -49,11 +47,6 @@ export function mapAiPayloadToLaunchKit(
       }))
       .filter((item) => item.prompt.length > 0),
     twitterSignals,
-    landingPage: mapLandingPageFields(
-      data.tokenName.trim(),
-      ticker,
-      data.landingPage,
-    ),
     launchExecutionLayer: data.launchExecutionLayer.trim(),
     automation: {
       xPosting: data.automation.xPosting.trim(),
@@ -101,7 +94,7 @@ Field rules:
 - riskNotes: concrete launch risks (saturation, confusion, copycats, weak hook)
 - recommendedPositioning: how to differentiate in one tight positioning frame
 - trendRecommendations: exactly 3 alternate READY PROMPTS that remix the user's idea against CURRENT X/Twitter hot narratives visible in the live signal (or general CT metas if signal is empty). Each item is ONLY: prompt (1 short ready-to-paste idea sentence), interestScore (0-100), launchReadinessScore (0-100). NO explanations, NO "because", NO trend names in a separate field — the prompt itself must already be the sharper angle. Example: user says "dog memecoin" → prompt like "Patron the demining hero dog who saves lives under fire" with higher projected scores than a generic dog. Scores must be comparable to the main idea and usually stronger when the trend angle is sharper.
-- landingPage: structured JSON for a React landing template (NOT HTML). Fields: tagline, shortNarrative, audience, colorPalette (hex primary/secondary/accent/background — dark crypto-native), heroTitle, heroSubtitle, aboutSection, communitySection, ctaText, pumpFunButtonLabel (e.g. "Trade on Pump.fun"), xLinkLabel, telegramLinkLabel. Memecoin voice; no corporate tone.
+- Do NOT generate landing page copy (landing is generated separately after Extra unlock)
 - launchExecutionLayer: Launch-tier ops checklist (Pump.fun deploy window, liquidity timing, CT coordination beats) — no tweet drafts
 - Do NOT generate tweets, Telegram Q&A, or social post examples
 - plan context: ${plan} (still output full JSON)
@@ -110,37 +103,35 @@ ${addonNotes.length ? `- ${addonNotes.join("\n- ")}` : ""}
 Return JSON matching the schema exactly.`;
 }
 
-export async function generateLaunchKitWithOpenAI(
+export async function generateLaunchKit(
   idea: string,
   plan: PlanId = "free",
   addons: PurchasedAddons = { x: false, telegram: false },
   twitterSignals?: TwitterSignals,
-): Promise<{ kit: LaunchKitFull; source: "openai" | "fallback" }> {
+): Promise<{ kit: LaunchKitFull; source: AiSource }> {
   const trimmed = idea.trim();
   if (!trimmed) {
     throw new Error("Memecoin idea is required.");
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    console.warn("[api/generate] OPENAI_API_KEY missing — using fallback mock.");
+  if (!isAiConfigured()) {
+    console.warn(
+      `[api/generate] ${getAiProvider()} API key missing — using fallback mock.`,
+    );
     return {
       kit: { ...generateMockLaunchKit(trimmed), twitterSignals },
       source: "fallback",
     };
   }
 
-  console.log("[api/generate] calling OpenAI…");
+  console.log(`[api/generate] calling ${getAiProvider()}…`);
 
-  const openai = new OpenAI({ apiKey });
   const signalBlock = twitterSignals
     ? `\n\n${formatTwitterSignalsForPrompt(twitterSignals)}`
     : "\n\nLIVE X/TWITTER SIGNAL: unavailable — estimate from general CT knowledge.";
 
   try {
-    const completion = await openai.beta.chat.completions.parse({
-      model: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
-      temperature: 0.75,
+    const { data, provider } = await generateStructured({
       messages: [
         { role: "system", content: buildSystemPrompt(plan, addons) },
         {
@@ -148,20 +139,17 @@ export async function generateLaunchKitWithOpenAI(
           content: `Memecoin idea: "${trimmed}"\n\nGenerate the full market intelligence report.${signalBlock}`,
         },
       ],
-      response_format: zodResponseFormat(aiLaunchKitSchema, "launch_intelligence"),
+      schema: aiLaunchKitSchema,
+      schemaName: "launch_intelligence",
+      temperature: 0.75,
     });
 
-    const parsed = completion.choices[0]?.message?.parsed;
-    if (!parsed) {
-      throw new Error("Empty model response");
-    }
-
     return {
-      kit: mapAiPayloadToLaunchKit(trimmed, parsed, twitterSignals),
-      source: "openai",
+      kit: mapAiPayloadToLaunchKit(trimmed, data, twitterSignals),
+      source: provider,
     };
   } catch (error) {
-    console.error("[generate] OpenAI error:", error);
+    console.error("[generate] AI error:", error);
     return {
       kit: { ...generateMockLaunchKit(trimmed), twitterSignals },
       source: "fallback",

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { landingPageSchema } from "@/lib/landing-page";
 
 export const aiLaunchKitSchema = z.object({
   tokenName: z.string(),
@@ -26,7 +25,6 @@ export const aiLaunchKitSchema = z.object({
     )
     .min(2)
     .max(4),
-  landingPage: landingPageSchema,
   launchExecutionLayer: z.string(),
   automation: z.object({
     xPosting: z.string(),

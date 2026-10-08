@@ -1,4 +1,3 @@
-import type { LandingPageContent } from "./landing-page";
 import type { TwitterSignals } from "./apify-twitter";
 
 export type { LandingColorPalette, LandingPageContent } from "./landing-page";
@@ -31,7 +30,7 @@ export type LaunchKitFull = {
   trendRecommendations: TrendRecommendation[];
   /** Live X/Twitter scrape snapshot used for scoring (when Apify is configured). */
   twitterSignals?: TwitterSignals;
-  landingPage: LandingPageContent;
+  /** Landing copy is generated separately after Extra unlock. */
   launchExecutionLayer: string;
   automation: {
     xPosting: string;
