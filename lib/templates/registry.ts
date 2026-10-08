@@ -1,6 +1,6 @@
 import type { LandingTemplateId } from "./types";
-import { getNeonCurveFallback } from "./neon-curve/fallback";
-import type { NeonCurveContent } from "./neon-curve/schema";
+import { getSharedLandingFallback } from "./shared/fallback";
+import type { SharedLandingContent } from "./shared/schema";
 
 export type LandingTemplateMeta = {
   id: LandingTemplateId;
@@ -14,6 +14,26 @@ export const LANDING_TEMPLATES: LandingTemplateMeta[] = [
     name: "Neon Curve",
     description: "Acid lime + magenta memecoin landing with bonding terminal",
   },
+  {
+    id: "signal-stack",
+    name: "Signal Stack",
+    description: "Cold CT terminal desk — blotter, tickers, no glow",
+  },
+  {
+    id: "arcade-dump",
+    name: "Arcade Dump",
+    description: "16-bit CRT coin-op with high-score energy",
+  },
+  {
+    id: "cult-chapel",
+    name: "Cult Chapel",
+    description: "Occult meme congregation — gothic, ritual, lore-first",
+  },
+  {
+    id: "street-sticker",
+    name: "Street Sticker",
+    description: "Graffiti / sticker-bomb hype wall",
+  },
 ];
 
 export function getLandingTemplateMeta(
@@ -22,19 +42,12 @@ export function getLandingTemplateMeta(
   return LANDING_TEMPLATES.find((t) => t.id === id);
 }
 
-export type LandingTemplateContent = NeonCurveContent;
+export type LandingTemplateContent = SharedLandingContent;
 
 export function getLandingFallback(
-  templateId: LandingTemplateId,
+  _templateId: LandingTemplateId,
   tokenName: string,
   ticker: string,
 ): LandingTemplateContent {
-  switch (templateId) {
-    case "neon-curve":
-      return getNeonCurveFallback(tokenName, ticker);
-    default: {
-      const _exhaustive: never = templateId;
-      return _exhaustive;
-    }
-  }
+  return getSharedLandingFallback(tokenName, ticker);
 }

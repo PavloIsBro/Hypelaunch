@@ -12,13 +12,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { NeonCurveContent } from "@/lib/templates/neon-curve/schema";
+import type { SharedLandingContent } from "@/lib/templates/shared/schema";
 import { Flame, Radio, Rocket, Sparkles, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import "./neon-curve.css";
 
 export type NeonCurveLandingProps = {
-  content: NeonCurveContent;
+  content: SharedLandingContent;
 };
 
 export function NeonCurveLanding({ content }: NeonCurveLandingProps) {

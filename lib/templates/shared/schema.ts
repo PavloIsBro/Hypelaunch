@@ -20,8 +20,8 @@ const faqItemSchema = z.object({
   answer: z.string(),
 });
 
-/** AI-generated fields for Neon Curve (tokenName/ticker injected from kit). */
-export const neonCurveAiSchema = z.object({
+/** Shared AI-generated fields for all landing templates (tokenName/ticker injected from kit). */
+export const sharedLandingAiSchema = z.object({
   brandMark: z.string().min(1).max(3),
   liveBadgeLabel: z.string(),
   buyButtonLabel: z.string(),
@@ -51,18 +51,18 @@ export const neonCurveAiSchema = z.object({
   footerNote: z.string(),
 });
 
-export type NeonCurveAiPayload = z.infer<typeof neonCurveAiSchema>;
+export type SharedLandingAiPayload = z.infer<typeof sharedLandingAiSchema>;
 
-export type NeonCurveContent = NeonCurveAiPayload & {
+export type SharedLandingContent = SharedLandingAiPayload & {
   tokenName: string;
   ticker: string;
 };
 
-export function mapNeonCurveContent(
+export function mapSharedLandingContent(
   tokenName: string,
   ticker: string,
-  raw: NeonCurveAiPayload,
-): NeonCurveContent {
+  raw: SharedLandingAiPayload,
+): SharedLandingContent {
   return {
     tokenName: tokenName.trim(),
     ticker: ticker.trim().toUpperCase(),

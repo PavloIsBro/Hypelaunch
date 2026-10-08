@@ -1,0 +1,78 @@
+/* Scoped to .cult-chapel only — occult meme congregation. */
+.cult-chapel {
+  --cc-bg: #070605;
+  --cc-panel: #100e0c;
+  --cc-border: #2a2218;
+  --cc-crimson: #b91c1c;
+  --cc-blood: #7f1d1d;
+  --cc-gold: #d4a017;
+  --cc-gold-dim: #a67c00;
+  --cc-text: #e8dfd0;
+  --cc-muted: #8a7f70;
+
+  color: var(--cc-text);
+  background: var(--cc-bg);
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.cult-chapel-display {
+  font-family: var(--font-cult-display), ui-serif, Georgia, serif;
+}
+
+.cult-chapel-smoke {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(185, 28, 28, 0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 20% 80%, rgba(212, 160, 23, 0.06), transparent 50%),
+    radial-gradient(ellipse 35% 25% at 85% 60%, rgba(127, 29, 29, 0.12), transparent 50%);
+}
+
+.cult-chapel-chant {
+  animation: cult-chapel-chant 40s linear infinite;
+}
+
+.cult-chapel-flicker {
+  animation: cult-chapel-flicker 3.2s ease-in-out infinite;
+}
+
+.cult-chapel-rise {
+  animation: cult-chapel-rise 6s ease-in-out infinite;
+}
+
+@keyframes cult-chapel-chant {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes cult-chapel-flicker {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  40% {
+    opacity: 0.85;
+    filter: brightness(1.15);
+  }
+  42% {
+    opacity: 0.7;
+  }
+  44% {
+    opacity: 1;
+  }
+}
+
+@keyframes cult-chapel-rise {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-12px);
+    opacity: 0.55;
+  }
+}

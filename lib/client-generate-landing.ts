@@ -3,9 +3,10 @@ import type { LandingTemplateId } from "@/lib/templates/types";
 
 export type GenerateLandingRequestPayload = {
   idea: string;
-  templateId: LandingTemplateId;
   tokenName: string;
   ticker: string;
+  /** Optional — ignored by the API; copy is shared across templates. */
+  templateId?: LandingTemplateId;
 };
 
 export type GenerateLandingApiResponse = {
@@ -24,7 +25,11 @@ export async function fetchLandingContent(
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
     signal,
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      idea: payload.idea,
+      tokenName: payload.tokenName,
+      ticker: payload.ticker,
+    }),
   });
 
   let data: GenerateLandingApiResponse;

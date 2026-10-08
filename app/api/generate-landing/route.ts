@@ -34,8 +34,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // templateId is optional — shared copy works for every layout
     const templateId = typeof body.templateId === "string" ? body.templateId.trim() : "";
-    if (!isLandingTemplateId(templateId)) {
+    if (templateId && !isLandingTemplateId(templateId)) {
       return NextResponse.json({ error: "Unknown landing template." }, { status: 400 });
     }
 
@@ -50,12 +51,11 @@ export async function POST(request: Request) {
 
     const { content, source, message } = await generateLandingContent(
       idea,
-      templateId,
       tokenName,
       ticker,
     );
 
-    console.log("[api/generate-landing] success", { source, templateId, ticker });
+    console.log("[api/generate-landing] success", { source, ticker, templateId: templateId || null });
 
     return NextResponse.json({
       content,

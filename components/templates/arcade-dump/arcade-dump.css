@@ -1,0 +1,84 @@
+/* Scoped to .arcade-dump only — 16-bit CRT coin-op. */
+.arcade-dump {
+  --ad-bg: #050810;
+  --ad-cabinet: #0c1220;
+  --ad-bezel: #1e3a5f;
+  --ad-cyan: #22d3ee;
+  --ad-pink: #fb7185;
+  --ad-yellow: #facc15;
+  --ad-green: #4ade80;
+  --ad-text: #fef3c7;
+  --ad-dim: #7dd3fc;
+
+  color: var(--ad-text);
+  background: var(--ad-bg);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.arcade-dump-pixel {
+  font-family: var(--font-arcade-pixel), ui-monospace, monospace;
+}
+
+.arcade-dump-crt::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12),
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+.arcade-dump-glow-text {
+  text-shadow:
+    0 0 8px rgba(34, 211, 238, 0.55),
+    0 0 18px rgba(251, 113, 133, 0.35);
+}
+
+.arcade-dump-marquee {
+  animation: arcade-dump-marquee 22s linear infinite;
+}
+
+.arcade-dump-insert {
+  animation: arcade-dump-insert 1.1s steps(2) infinite;
+}
+
+.arcade-dump-bounce {
+  animation: arcade-dump-bounce 2.4s ease-in-out infinite;
+}
+
+@keyframes arcade-dump-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes arcade-dump-insert {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes arcade-dump-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}

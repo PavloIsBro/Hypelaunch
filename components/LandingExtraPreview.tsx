@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Syne } from "next/font/google";
+import {
+  IBM_Plex_Mono,
+  Press_Start_2P,
+  Syne,
+  Bebas_Neue,
+  Cinzel,
+} from "next/font/google";
 import { LandingFrame } from "@/components/LandingFrame";
 import { TemplatePicker } from "@/components/TemplatePicker";
 import { fetchLandingContent } from "@/lib/client-generate-landing";
@@ -16,6 +22,30 @@ const syne = Syne({
   subsets: ["latin"],
   variable: "--font-neon-sans",
   weight: ["400", "600", "700", "800"],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  variable: "--font-signal-mono",
+  weight: ["400", "500", "600", "700"],
+});
+
+const pressStart = Press_Start_2P({
+  subsets: ["latin"],
+  variable: "--font-arcade-pixel",
+  weight: "400",
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  variable: "--font-cult-display",
+  weight: ["400", "600", "700", "900"],
+});
+
+const bebas = Bebas_Neue({
+  subsets: ["latin"],
+  variable: "--font-street-display",
+  weight: "400",
 });
 
 type LandingStatus = "idle" | "loading" | "ready" | "fallback";
@@ -50,8 +80,9 @@ export function LandingExtraPreview({
     };
   }, []);
 
+  // Generate once per idea/identity — template switch reuses the same copy
   useEffect(() => {
-    const fallback = getLandingFallback(selectedTemplateId, tokenName, ticker);
+    const fallback = getLandingFallback("neon-curve", tokenName, ticker);
     setLandingContent(fallback);
     setLandingStatus("loading");
     setLandingNotice(null);
@@ -64,12 +95,7 @@ export function LandingExtraPreview({
     void (async () => {
       try {
         const data = await fetchLandingContent(
-          {
-            idea,
-            templateId: selectedTemplateId,
-            tokenName,
-            ticker,
-          },
+          { idea, tokenName, ticker },
           controller.signal,
         );
 
@@ -92,10 +118,18 @@ export function LandingExtraPreview({
         );
       }
     })();
-  }, [idea, selectedTemplateId, ticker, tokenName]);
+  }, [idea, ticker, tokenName]);
 
   const Template = getLandingTemplateComponent(selectedTemplateId);
   const slug = tokenName.toLowerCase().replace(/\s+/g, "-");
+
+  const fontVars = [
+    syne.variable,
+    ibmPlexMono.variable,
+    pressStart.variable,
+    cinzel.variable,
+    bebas.variable,
+  ].join(" ");
 
   return (
     <section className={`glass-card rounded-2xl p-6 ${className}`}>
@@ -107,7 +141,7 @@ export function LandingExtraPreview({
               ? "Default template ready · generating AI copy…"
               : landingStatus === "fallback"
                 ? "Default template · AI copy unavailable"
-                : "AI-generated copy · selected React template"}
+                : "AI-generated copy · switch templates without regenerating"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +159,6 @@ export function LandingExtraPreview({
       <TemplatePicker
         selectedId={selectedTemplateId}
         onSelect={setSelectedTemplateId}
-        disabled={landingStatus === "loading"}
       />
 
       {landingNotice ? (
@@ -134,10 +167,10 @@ export function LandingExtraPreview({
         </p>
       ) : null}
 
-      <div className={`mt-5 ${syne.variable}`}>
+      <div className={`mt-5 ${fontVars}`}>
         {Template ? (
           <LandingFrame pathLabel={`hypelaunch.space/${slug}`}>
-            <div className="[&_.neon-curve]:min-h-0">
+            <div className="[&_.neon-curve]:min-h-0 [&_.signal-stack]:min-h-0 [&_.arcade-dump]:min-h-0 [&_.cult-chapel]:min-h-0 [&_.street-sticker]:min-h-0">
               <Template content={landingContent} />
             </div>
           </LandingFrame>

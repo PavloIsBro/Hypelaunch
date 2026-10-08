@@ -13,7 +13,7 @@ export function TemplatePicker({ selectedId, onSelect, disabled }: TemplatePicke
         <h3 className="text-sm font-semibold text-white">Landing template</h3>
         <p className="mt-0.5 text-xs text-zinc-500">Choose a layout for your Extra landing preview</p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {LANDING_TEMPLATES.map((template) => {
           const selected = template.id === selectedId;
           return (

@@ -1,7 +1,7 @@
-import type { NeonCurveAiPayload, NeonCurveContent } from "./schema";
-import { mapNeonCurveContent } from "./schema";
+import type { SharedLandingAiPayload, SharedLandingContent } from "./schema";
+import { mapSharedLandingContent } from "./schema";
 
-const DEMO_AI_PAYLOAD: NeonCurveAiPayload = {
+const DEMO_AI_PAYLOAD: SharedLandingAiPayload = {
   brandMark: "FR",
   liveBadgeLabel: "LIVE ON CURVE",
   buyButtonLabel: "Buy $FROTH",
@@ -83,7 +83,7 @@ const DEMO_AI_PAYLOAD: NeonCurveAiPayload = {
         "Connect wallet → open Pump.fun → search $FROTH → ape size you can laugh about later. This page is a template preview, not financial advice.",
     },
   ],
-  footerNote: "Neon Curve template · $FROTH demo · hypelaunch.space/templates/neon-curve",
+  footerNote: "Hypelaunch landing preview · $FROTH demo · hypelaunch.space",
 };
 
 function brandMarkFromTicker(ticker: string): string {
@@ -93,20 +93,20 @@ function brandMarkFromTicker(ticker: string): string {
   return "NL";
 }
 
-/** Fallback Neon Curve content. Overrides demo identity with kit token when provided. */
-export function getNeonCurveFallback(
+/** Shared fallback content for all landing templates. */
+export function getSharedLandingFallback(
   tokenName = "FROTH",
   ticker = "FROTH",
-): NeonCurveContent {
+): SharedLandingContent {
   const name = tokenName.trim() || "FROTH";
   const tick = (ticker.trim() || "FROTH").toUpperCase();
   const isDemo = name.toUpperCase() === "FROTH" && tick === "FROTH";
 
   if (isDemo) {
-    return mapNeonCurveContent(name, tick, DEMO_AI_PAYLOAD);
+    return mapSharedLandingContent(name, tick, DEMO_AI_PAYLOAD);
   }
 
-  const personalized: NeonCurveAiPayload = {
+  const personalized: SharedLandingAiPayload = {
     ...DEMO_AI_PAYLOAD,
     brandMark: brandMarkFromTicker(tick),
     buyButtonLabel: `Buy $${tick}`,
@@ -135,8 +135,8 @@ export function getNeonCurveFallback(
     ),
     xLinkLabel: `Follow @${tick.toLowerCase()}coin`,
     telegramLinkLabel: `TG: ${tick.toLowerCase()}-fam`,
-    footerNote: `Neon Curve template · $${tick} preview · hypelaunch.space`,
+    footerNote: `Hypelaunch landing preview · $${tick} · hypelaunch.space`,
   };
 
-  return mapNeonCurveContent(name, tick, personalized);
+  return mapSharedLandingContent(name, tick, personalized);
 }

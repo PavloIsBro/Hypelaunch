@@ -1,4 +1,10 @@
-export const LANDING_TEMPLATE_IDS = ["neon-curve"] as const;
+export const LANDING_TEMPLATE_IDS = [
+  "neon-curve",
+  "signal-stack",
+  "arcade-dump",
+  "cult-chapel",
+  "street-sticker",
+] as const;
 
 export type LandingTemplateId = (typeof LANDING_TEMPLATE_IDS)[number];
 
